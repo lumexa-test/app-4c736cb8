@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VidSlack — Prompt a video. Post it to Slack.</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --font-sans:"Poppins";
+
+    /* colour tokens — LIGHT */
+    --background:#f6f2f8;
+    --foreground:#1b1420;
+    --card:#fcf9fd;
+    --card-foreground:#1b1420;
+    --primary:#611f69;
+    --primary-foreground:#fdf4ff;
+    --secondary:#ebe3ef;
+    --secondary-foreground:#3a2a40;
+    --muted:#ece4f0;
+    --muted-foreground:#6b5c74;
+    --accent:#1264a3;
+    --accent-foreground:#f2f8fd;
+    --border:#dbcfe2;
+    --ring:#8a3d95;
+
+    /* aurora field */
+    --aurora-1:#e7d5f4;
+    --aurora-2:#cfe2f6;
+    --aurora-3:#d6f1ee;
+
+    /* scales */
+    --gutter:clamp(1.25rem,4vw,3.5rem);
+    --radius:4px;
+
+    --step--1:clamp(0.72rem,0.69rem + 0.14vw,0.8rem);
+    --step-0:clamp(1rem,0.96rem + 0.16vw,1.08rem);
+    --step-1:clamp(1.3rem,1.22rem + 0.35vw,1.42rem);
+    --step-2:clamp(1.72rem,1.5rem + 0.9vw,2.1rem);
+    --step-3:clamp(2.3rem,1.85rem + 2.2vw,3.4rem);
+    --step-4:clamp(3rem,1.95rem + 6.4vw,6.4rem);
+
+    --space-1:0.4rem;
+    --space-2:0.6rem;
+    --space-3:0.9rem;
+    --space-4:1.4rem;
+    --space-5:2.1rem;
+    --space-6:3.2rem;
+
+    --section-y:clamp(4rem,9vw,8rem);
+
+    --shadow-1:0 1px 2px color-mix(in srgb, var(--foreground) 10%, transparent);
+    --shadow-2:0 1px 2px color-mix(in srgb, var(--foreground) 8%, transparent), 0 10px 28px color-mix(in srgb, var(--foreground) 8%, transparent);
+    --shadow-3:0 18px 48px color-mix(in srgb, var(--foreground) 16%, transparent);
+    --shadow-accent:0 6px 20px color-mix(in srgb, var(--primary) 34%, transparent);
+  }
+  .dark{
+    --background:#100a16;
+    --foreground:#f2ecf5;
+    --card:#1b1223;
+    --card-foreground:#f5eff8;
+    --primary:#7d2a87;
+    --primary-foreground:#fdf3ff;
+    --secondary:#241830;
+    --secondary-foreground:#ded2e5;
+    --muted:#180f20;
+    --muted-foreground:#a897b1;
+    --accent:#4aa3dd;
+    --accent-foreground:#08131d;
+    --border:#2f2339;
+    --ring:#b464c2;
+
+    --aurora-1:#4a1550;
+    --aurora-2:#13315f;
+    --aurora-3:#116b74;
+
+    --shadow-1:0 1px 2px color-mix(in srgb, var(--background) 75%, transparent);
+    --shadow-2:0 2px 6px color-mix(in srgb, var(--background) 80%, transparent), 0 14px 38px color-mix(in srgb, var(--background) 68%, transparent);
+    --shadow-3:0 24px 60px color-mix(in srgb, var(--background) 85%, transparent);
+    --shadow-accent:0 8px 28px color-mix(in srgb, var(--primary) 55%, transparent);
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--background);
+    color:var(--foreground);
+    font-family:var(--font-sans),sans-serif;
+    font-weight:300;
+    font-size:var(--step-0);
+    line-height:1.65;
+  }
+  [data-sec]{padding-inline:var(--gutter);padding-block:var(--section-y)}
+  .wrap{width:100%;max-width:1240px;margin-inline:auto}
+  .wrap-left{width:100%;max-width:1240px}
+  h1,h2,h3,h4,p,ul,figure,blockquote{margin:0}
+  ul{padding:0;list-style:none}
+  img{max-width:100%}
+  a{color:inherit;text-decoration:none;transition:color 160ms ease,opacity 160ms ease}
+  h1,h2{font-weight:300;letter-spacing:-0.03em;line-height:1.03;overflow-wrap:break-word}
+  h1{font-size:var(--step-4)}
+  h2{font-size:var(--step-3)}
+  h3{font-weight:600;font-size:var(--step-1);letter-spacing:-0.01em;line-height:1.25}
+  .eyebrow{
+    font-size:var(--step--1);font-weight:600;text-transform:uppercase;
+    letter-spacing:0.16em;color:var(--muted-foreground);
+  }
+  .lead{font-size:var(--step-1);line-height:1.45;color:var(--foreground)}
+  .body{color:var(--muted-foreground)}
+  .grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--space-5)}
+  .grid12>*{min-width:0}
+
+  /* buttons */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);
+    font-size:var(--step--1);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+    padding:var(--space-3) var(--space-5);border-radius:var(--radius);
+    border:1px solid transparent;cursor:pointer;
+    transition:transform 160ms ease,background-color 160ms ease,box-shadow 160ms ease,border-color 160ms ease,color 160ms ease;
+  }
+  .btn-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:var(--shadow-accent)}
+  .btn-primary:hover{background:color-mix(in srgb, var(--primary) 84%, var(--foreground));transform:translateY(-1px)}
+  .btn-ghost{background:transparent;color:var(--foreground);border-color:var(--border)}
+  .btn-ghost:hover{border-color:var(--foreground);background:color-mix(in srgb, var(--foreground) 6%, transparent)}
+  .btn-sm{padding:var(--space-2) var(--space-4)}
+  a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{
+    outline:2px solid var(--ring);outline-offset:2px
+  }
+
+  .pill{
+    display:inline-block;border-radius:999px;font-size:var(--step--1);font-weight:600;
+    letter-spacing:0.1em;text-transform:uppercase;padding:var(--space-1) var(--space-3);
+  }
+
+  /* NAV */
+  [data-sec="nav"]{
+    padding-block:var(--space-4);
+    display:flex;align-items:center;gap:var(--space-4);
+    background:var(--background);
+    border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex;align-items:center;gap:var(--space-3);min-width:0}
+  .logo{
+    width:40px;height:40px;flex:0 0 auto;border-radius:var(--radius);
+    background:var(--primary);color:var(--primary-foreground);
+    display:grid;place-items:center;font-size:var(--step--1);font-weight:600;letter-spacing:0.06em;
+  }
+  .brandname{font-weight:600;font-size:var(--step-0);letter-spacing:-0.01em}
+  .navlinks{display:flex;gap:var(--space-5);margin-inline:auto}
+  .navlinks a{font-size:var(--step--1);font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted-foreground)}
+  .navlinks a:hover{color:var(--foreground)}
+  [data-sec="nav"] .btn{margin-left:auto}
+  .navlinks + .btn{margin-left:0}
+
+  /* HERO */
+  [data-sec="hero"]{
+    position:relative;overflow:hidden;
+    background:
+      radial-gradient(95% 75% at 8% 4%, var(--aurora-1) 0%, transparent 62%),
+      radial-gradient(80% 65% at 88% 6%, var(--aurora-2) 0%, transparent 64%),
+      radial-gradient(85% 80% at 58% 108%, var(--aurora-3) 0%, transparent 66%),
+      var(--background);
+  }
+  .glow{
+    position:absolute;pointer-events:none;z-index:0;
+    right:-10%;top:22%;width:70%;height:60%;
+    background:radial-gradient(closest-side, var(--aurora-3), transparent 78%);
+    filter:blur(50px);opacity:.75;
+  }
+  .hero-in{position:relative;z-index:1;display:grid;gap:var(--space-6)}
+  .hero-h1{max-width:22ch}
+  .hero-bottom{display:grid;grid-template-columns:4fr 7fr;gap:var(--space-6);align-items:end}
+  .hero-bottom>*{min-width:0}
+  .hero-copy{display:grid;gap:var(--space-4)}
+  .ctas{display:flex;flex-wrap:wrap;gap:var(--space-3)}
+  .meta-note{font-size:var(--step--1);font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted-foreground)}
+
+  /* glass product panel */
+  .panel{
+    width:100%;border-radius:var(--radius);
+    background:color-mix(in srgb, var(--card) 74%, transparent);
+    border:1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+    backdrop-filter:blur(18px);
+    box-shadow:var(--shadow-3);
+    color:var(--card-foreground);
+    overflow:hidden;
+  }
+  .panel-top{
+    display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);
+    padding:var(--space-3) var(--space-4);
+    border-bottom:1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  }
+  .chan{font-weight:600;font-size:var(--step-0);color:var(--card-foreground)}
+  .panel-top .pill{background:color-mix(in srgb, var(--primary) 22%, transparent);color:var(--card-foreground)}
+  .thread{display:grid;gap:var(--space-4);padding:var(--space-4)}
+  .msg{display:flex;gap:var(--space-3);min-width:0}
+  .ava{
+    width:36px;height:36px;flex:0 0 auto;border-radius:999px;display:grid;place-items:center;
+    font-size:var(--step--1);font-weight:600;letter-spacing:0.06em;
+  }
+  .ava-p{background:var(--accent);color:var(--accent-foreground)}
+  .ava-b{background:var(--primary);color:var(--primary-foreground)}
+  .msg-b{min-width:0}
+  .msg-h{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;font-weight:600;font-size:var(--step-0);color:var(--card-foreground)}
+  .msg-h .time{font-weight:300;font-size:var(--step--1);color:var(--muted-foreground);letter-spacing:0.06em}
+  .msg-h .tag{background:var(--secondary);color:var(--secondary-foreground);border-radius:999px;font-size:var(--step--1);font-weight:600;letter-spacing:0.12em;padding:0 var(--space-2)}
+  .msg-b p.txt{color:var(--card-foreground)}
+  .thumb{
+    position:relative;margin-top:var(--space-3);aspect-ratio:16/9;width:100%;max-width:420px;
+    border-radius:var(--radius);border:1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+    background:linear-gradient(135deg, var(--primary), var(--accent) 62%, var(--aurora-3));
+    display:grid;place-items:center;overflow:hidden;
+  }
+  .thumb .dur{
+    position:absolute;right:var(--space-2);bottom:var(--space-2);
+    background:color-mix(in srgb, var(--foreground) 62%, transparent);color:var(--background);
+    border-radius:999px;font-size:var(--step--1);font-weight:600;padding:0 var(--space-2);letter-spacing:0.08em;
+  }
+  .filemeta{margin-top:var(--space-2);font-size:var(--step--1);letter-spacing:0.1em;text-transform:uppercase;font-weight:600;color:var(--muted-foreground)}
+  .composer{
+    display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;
+    padding:var(--space-3) var(--space-4);
+    border-top:1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    background:color-mix(in srgb, var(--muted) 55%, transparent);
+  }
+  .c-tag{background:var(--primary);color:var(--primary-foreground);border-radius:999px;font-size:var(--step--1);font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:var(--space-1) var(--space-3)}
+  .c-input{flex:1 1 140px;min-width:0;font-size:var(--step-0);color:var(--muted-foreground)}
+  .c-send{
+    width:34px;height:34px;flex:0 0 auto;border-radius:var(--radius);
+    background:var(--accent);color:var(--accent-foreground);display:grid;place-items:center;font-weight:600
+  }
+
+  /* HOW */
+  [data-sec="how"]{background:var(--background)}
+  .how-head{display:grid;gap:var(--space-3);max-width:34ch;margin-bottom:var(--space-6)}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-6)}
+  .steps>li{min-width:0;border-top:1px solid var(--border);padding-top:var(--space-4);display:grid;gap:var(--space-3)}
+  .stepnum{font-size:var(--step-2);color:var(--primary);letter-spacing:-0.02em}
+  .dark .stepnum{color:color-mix(in srgb, var(--primary) 50%, var(--foreground))}
+
+  /* SPLITS + FRAMES */
+  [data-sec="text2video"]{background:var(--muted)}
+  [data-sec="image2video"]{background:var(--background)}
+  .split{display:grid;grid-template-columns:5fr 7fr;gap:var(--space-6);align-items:center}
+  .split-rev{grid-template-columns:7fr 5fr}
+  .split>*{min-width:0}
+  .copy{display:grid;gap:var(--space-4)}
+  .ticks{display:grid;gap:var(--space-2)}
+  .ticks li{display:flex;gap:var(--space-3);color:var(--muted-foreground)}
+  .ticks li b{color:var(--foreground);font-weight:600}
+  .dot{width:7px;height:7px;flex:0 0 auto;margin-top:0.6em;border-radius:999px;background:var(--accent)}
+
+  .frame{
+    border:1px solid var(--border);border-radius:var(--radius);background:var(--card);
+    padding:var(--space-2);box-shadow:var(--shadow-2);
+  }
+  .shot{
+    border-radius:var(--radius);border:1px solid var(--border);
+    background:linear-gradient(150deg, var(--secondary), var(--muted) 55%, color-mix(in srgb, var(--primary) 22%, var(--card)));
+    display:grid;place-items:center;
+  }
+  .shot span{
+    font-size:var(--step--1);font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
+    color:var(--muted-foreground);padding:var(--space-3);text-align:center
+  }
+  .r-wide{aspect-ratio:16/9}
+  .r-sq{aspect-ratio:1/1}
+  .cap{
+    display:flex;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;
+    padding:var(--space-3) var(--space-2) var(--space-1);
+    font-size:var(--step--1);letter-spacing:0.1em;text-transform:uppercase;font-weight:600;color:var(--muted-foreground)
+  }
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
+  .pair>*{min-width:0}
+
+  /* NOTIFY BAND */
+  [data-sec="notify"]{background:var(--primary);color:var(--primary-foreground)}
+  [data-sec="notify"] .eyebrow{color:color-mix(in srgb, var(--primary-foreground) 68%, transparent)}
+  [data-sec="notify"] h2,[data-sec="notify"] p{color:var(--primary-foreground)}
+  [data-sec="notify"] .btn-ghost{color:var(--primary-foreground);border-color:color-mix(in srgb, var(--primary-foreground) 55%, transparent)}
+  [data-sec="notify"] .btn-ghost:hover{background:color-mix(in srgb, var(--primary-foreground) 14%, transparent);border-color:var(--primary-foreground)}
+  .notify-grid{display:grid;grid-template-columns:5fr 6fr;gap:var(--space-6);align-items:center}
+  .notify-grid>*{min-width:0}
+  .alert{
+    border-radius:var(--radius);
+    border:1px solid color-mix(in srgb, var(--primary-foreground) 30%, transparent);
+    background:color-mix(in srgb, var(--primary-foreground) 10%, transparent);
+    padding:var(--space-4);display:grid;gap:var(--space-3);
+  }
+  .alert-row{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap}
+  .alert .pill{background:color-mix(in srgb, var(--primary-foreground) 20%, transparent);color:var(--primary-foreground)}
+  .alert-line{font-size:var(--step-0);color:var(--primary-foreground)}
+  .alert-sub{font-size:var(--step--1);letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:color-mix(in srgb, var(--primary-foreground) 70%, transparent)}
+  .bar{height:6px;border-radius:999px;background:color-mix(in srgb, var(--primary-foreground) 22%, transparent);overflow:hidden}
+  .bar i{display:block;height:100%;width:100%;background:var(--primary-foreground)}
+
+  /* GALLERY */
+  [data-sec="gallery"]{background:var(--background)}
+  .gal-head{display:flex;align-items:end;justify-content:space-between;gap:var(--space-5);flex-wrap:wrap;margin-bottom:var(--space-6)}
+  .gal{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4)}
+  .gal>*{min-width:0}
+
+  /* VOICES */
+  [data-sec="voices"]{background:var(--muted)}
+  .voices{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-6);margin-top:var(--space-6)}
+  .voices>figure{min-width:0;border-top:1px solid var(--border);padding-top:var(--space-4);display:grid;gap:var(--space-4)}
+  .voices blockquote{font-size:var(--step-1);line-height:1.4;letter-spacing:-0.01em}
+  .who{display:flex;align-items:center;gap:var(--space-3)}
+  .avatar{
+    width:52px;height:52px;flex:0 0 auto;border-radius:999px;border:1px solid var(--border);
+    background:linear-gradient(150deg, var(--secondary), color-mix(in srgb, var(--primary) 30%, var(--card)));
+  }
+  .who p{font-size:var(--step--1);letter-spacing:0.08em;text-transform:uppercase;font-weight:600;color:var(--muted-foreground)}
+  .who p b{display:block;letter-spacing:0.04em;color:var(--foreground)}
+
+  /* PRICING */
+  [data-sec="pricing"]{background:var(--background)}
+  .price-head{display:grid;gap:var(--space-3);max-width:36ch;margin-bottom:var(--space-6)}
+  .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4)}
+  .tier{
+    min-width:0;background:var(--card);color:var(--card-foreground);
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:var(--space-5);display:grid;gap:var(--space-4);align-content:start;box-shadow:var(--shadow-1)
+  }
+  .tier.hot{border-color:var(--primary);box-shadow:var(--shadow-2)}
+  .amount{font-size:var(--step-2);letter-spacing:-0.03em}
+  .amount small{font-size:var(--step--1);font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted-foreground)}
+  .tier ul{display:grid;gap:var(--space-2);color:var(--muted-foreground);font-size:var(--step-0)}
+  .tier .btn{width:100%}
+  .tier .pill{background:var(--secondary);color:var(--secondary-foreground);justify-self:start}
+
+  /* FAQ */
+  [data-sec="faq"]{background:var(--muted)}
+  .faq-list{grid-column:6 / -1}
+  .faq-title{grid-column:1 / span 4}
+  details{border-top:1px solid var(--border);padding-block:var(--space-4)}
+  details:last-child{border-bottom:1px solid var(--border)}
+  summary{
+    display:flex;justify-content:space-between;gap:var(--space-4);cursor:pointer;list-style:none;
+    font-weight:600;font-size:var(--step-0);color:var(--foreground);transition:color 160ms ease
+  }
+  summary::-webkit-details-marker{display:none}
+  summary:hover{color:var(--primary)}
+  .dark summary:hover{color:color-mix(in srgb, var(--primary) 45%, var(--foreground))}
+  details p{margin-top:var(--space-3);color:var(--muted-foreground);max-width:62ch}
+
+  /* CONTACT */
+  [data-sec="contact"]{background:var(--background)}
+  .c-copy{grid-column:1 / span 5;display:grid;gap:var(--space-4);align-content:start}
+  .c-form{
+    grid-column:7 / -1;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:var(--space-5);display:grid;gap:var(--space-4);box-shadow:var(--shadow-2)
+  }
+  label{display:grid;gap:var(--space-2);font-size:var(--step--1);font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted-foreground)}
+  input,textarea{
+    width:100%;font-family:inherit;font-weight:300;font-size:var(--step-0);
+    color:var(--card-foreground);background:var(--background);
+    border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-3);
+    transition:border-color 160ms ease
+  }
+  input::placeholder,textarea::placeholder{color:var(--muted-foreground)}
+  input:hover,textarea:hover{border-color:var(--muted-foreground)}
+  textarea{min-height:7.5rem;resize:vertical}
+
+  /* FOOTER */
+  [data-sec="footer"]{
+    padding-block:var(--space-5);
+    background:var(--card);color:var(--card-foreground);border-top:1px solid var(--border);
+    display:flex;align-items:center;gap:var(--space-5);flex-wrap:wrap;justify-content:space-between
+  }
+  .flinks{display:flex;gap:var(--space-4);flex-wrap:wrap}
+  .flinks a{font-size:var(--step--1);font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted-foreground)}
+  .flinks a:hover{color:var(--foreground)}
+  .copy{font-size:var(--step--1);color:var(--muted-foreground);letter-spacing:0.04em}
+
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .panel{animation:fadein 400ms ease both}
+
+  @media (max-width:980px){
+    .navlinks{display:none}
+    .hero-bottom,.split,.split-rev,.notify-grid{grid-template-columns:1fr}
+    .steps,.gal,.voices,.tiers{grid-template-columns:1fr}
+    .hero-h1{max-width:none}
+    .faq-title,.faq-list,.c-copy,.c-form{grid-column:1 / -1}
+  }
+  @media (min-width:981px){
+    .split-rev .copy{order:2}
+  }
+  @media (max-width:560px){
+    .pair{grid-template-columns:1fr}
+    .nav-long{display:none}
+    [data-sec="nav"] .btn{padding:var(--space-2) var(--space-3)}
+  }
+</style>
+</head>
+<body>
+
+<header data-sec="nav">
+  <a data-edit-id="nav:a:0" class="brand" href="#hero"><span data-edit-id="nav:span:1" class="logo" data-img="Logo">Logo</span><span data-edit-id="nav:span:2" class="brandname">VidSlack</span></a>
+  <nav class="navlinks">
+    <a data-edit-id="nav:a:3" href="#how">How it works</a>
+    <a data-edit-id="nav:a:4" href="#text2video">Features</a>
+    <a data-edit-id="nav:a:5" href="#pricing">Pricing</a>
+    <a data-edit-id="nav:a:6" href="#faq">FAQ</a>
+  </nav>
+  <a data-edit-id="nav:a:7" class="btn btn-primary btn-sm" href="#contact">Connect<span data-edit-id="nav:span:8" class="nav-long">&#160;Slack</span></a>
+</header>
+
+<section data-sec="hero" id="hero">
+  <div data-edit-id="hero:div:0" class="glow" aria-hidden="true"></div>
+  <div data-edit-id="hero:div:1" class="hero-in wrap-left">
+    <p data-edit-id="hero:p:2" class="eyebrow">Text → video · Image → video · Posted to your channel</p>
+    <h1 data-edit-id="hero:h1:3" class="hero-h1">Prompt a video. Post it to Slack.</h1>
+    <div data-edit-id="hero:div:4" class="hero-bottom">
+      <div data-edit-id="hero:div:5" class="hero-copy">
+        <p data-edit-id="hero:p:6" class="lead">VidSlack renders clips from a line of text or a single image, then drops the finished file in the channel you chose. No exporting, no re-uploading.</p>
+        <div data-edit-id="hero:div:7" class="ctas">
+          <a data-edit-id="hero:a:8" class="btn btn-primary" href="#contact">Connect your workspace</a>
+          <a data-edit-id="hero:a:9" class="btn btn-ghost" href="#how">See how it works</a>
+        </div>
+        <p data-edit-id="hero:p:10" class="meta-note">Average render 52s · 1080p MP4 · 5–12s clips</p>
+      </div>
+
+      <div data-edit-id="hero:div:11" class="panel">
+        <div data-edit-id="hero:div:12" class="panel-top">
+          <span data-edit-id="hero:span:13" class="chan"># video-drops</span>
+          <span data-edit-id="hero:span:14" class="pill">Notifications on</span>
+        </div>
+        <div data-edit-id="hero:div:15" class="thread">
+          <div data-edit-id="hero:div:16" class="msg">
+            <div data-edit-id="hero:div:17" class="ava ava-p">MO</div>
+            <div data-edit-id="hero:div:18" class="msg-b">
+              <p data-edit-id="hero:p:19" class="msg-h">Maya <span data-edit-id="hero:span:20" class="time">10:14</span></p>
+              <p data-edit-id="hero:p:21" class="txt">Need a vertical teaser for the kombucha launch — dusk, slow drift.</p>
+            </div>
+          </div>
+          <div data-edit-id="hero:div:22" class="msg">
+            <div data-edit-id="hero:div:23" class="ava ava-b">VS</div>
+            <div data-edit-id="hero:div:24" class="msg-b">
+              <p data-edit-id="hero:p:25" class="msg-h">VidSlack <span data-edit-id="hero:span:26" class="tag">App</span> <span data-edit-id="hero:span:27" class="time">10:15</span></p>
+              <p data-edit-id="hero:p:28" class="txt">Render complete — “Aurora over a berry orchard, slow drift”.</p>
+              <div data-edit-id="hero:div:29" class="thumb">
+                <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
+                  <circle cx="23" cy="23" r="22" fill="none" stroke="var(--primary-foreground)" stroke-width="1.5" opacity="0.85" />
+                  <path d="M18 14 L33 23 L18 32 Z" fill="var(--primary-foreground)" />
+                </svg>
+                <span data-edit-id="hero:span:30" class="dur">0:12</span>
+              </div>
+              <p data-edit-id="hero:p:31" class="filemeta">aurora-orchard-01.mp4 · 1080p · 18.4 MB</p>
+            </div>
+          </div>
+        </div>
+        <div data-edit-id="hero:div:32" class="composer">
+          <span data-edit-id="hero:span:33" class="c-tag">Text → Video</span>
+          <span data-edit-id="hero:span:34" class="c-input">Describe your next clip…</span>
+          <span data-edit-id="hero:span:35" class="c-send" aria-hidden="true">↑</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-sec="how" id="how">
+  <div data-edit-id="how:div:0" class="wrap-left">
+    <div data-edit-id="how:div:1" class="how-head">
+      <p data-edit-id="how:p:2" class="eyebrow">How it works</p>
+      <h2 data-edit-id="how:h2:3">Three steps, then it runs itself.</h2>
+    </div>
+    <ul class="steps">
+      <li data-edit-id="how:li:4">
+        <span data-edit-id="how:span:5" class="stepnum">01</span>
+        <h3 data-edit-id="how:h3:6">Connect the workspace</h3>
+        <p data-edit-id="how:p:7" class="body">Sign in with Slack OAuth. We request read access to channel names and permission to post files — nothing else. Revoke it from Slack at any time.</p>
+      </li>
+      <li data-edit-id="how:li:8">
+        <span data-edit-id="how:span:9" class="stepnum">02</span>
+        <h3 data-edit-id="how:h3:10">Write a prompt or drop an image</h3>
+        <p data-edit-id="how:p:11" class="body">Type the shot you want, or upload one still and let the motion pass do the rest. Pick aspect ratio and length before it queues.</p>
+      </li>
+      <li data-edit-id="how:li:12">
+        <span data-edit-id="how:span:13" class="stepnum">03</span>
+        <h3 data-edit-id="how:h3:14">Choose the channel</h3>
+        <p data-edit-id="how:p:15" class="body">Set a destination per project. When the render lands, the file and its prompt are posted there — you don’t have to watch a progress bar.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section data-sec="text2video" id="text2video">
+  <div data-edit-id="text2video:div:0" class="wrap split">
+    <div data-edit-id="text2video:div:1" class="copy">
+      <p data-edit-id="text2video:p:2" class="eyebrow">Text to video</p>
+      <h2 data-edit-id="text2video:h2:3">One line in. A finished clip out.</h2>
+      <p data-edit-id="text2video:p:4" class="body">Write the scene the way you’d brief a camera operator — subject, movement, light. VidSlack returns a graded MP4 with audio-safe silence, ready to cut or post as it is.</p>
+      <ul class="ticks">
+        <li data-edit-id="text2video:li:5"><span data-edit-id="text2video:span:6" class="dot"></span><span data-edit-id="text2video:span:7"><b>5, 8 or 12 seconds</b> at 9:16, 1:1 or 16:9.</span></li>
+        <li data-edit-id="text2video:li:8"><span data-edit-id="text2video:span:9" class="dot"></span><span data-edit-id="text2video:span:10"><b>Prompt history</b> stays attached to every file, so a good shot is repeatable.</span></li>
+        <li data-edit-id="text2video:li:11"><span data-edit-id="text2video:span:12" class="dot"></span><span data-edit-id="text2video:span:13"><b>Queue position visible</b> while it renders — typically 40–90 seconds at 1080p.</span></li>
+      </ul>
+    </div>
+    <figure class="frame">
+      <div data-edit-id="text2video:div:14" class="shot r-wide" data-img="Generated clip still"><span data-edit-id="text2video:span:15">Generated clip still</span></div>
+      <figcaption data-edit-id="text2video:figcaption:16" class="cap"><span data-edit-id="text2video:span:17">“Slow drift over a berry orchard at dusk”</span><span data-edit-id="text2video:span:18">12s · 1080p</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section data-sec="image2video" id="image2video">
+  <div data-edit-id="image2video:div:0" class="wrap split split-rev">
+    <div data-edit-id="image2video:div:1" class="copy">
+      <p data-edit-id="image2video:p:2" class="eyebrow">Image to video</p>
+      <h2 data-edit-id="image2video:h2:3">Give it one still. It gives back motion.</h2>
+      <p data-edit-id="image2video:p:4" class="body">Drop a product shot, a frame from a shoot, a sketch. VidSlack keeps the composition and adds the movement you describe — drift, parallax, condensation, wind.</p>
+      <ul class="ticks">
+        <li data-edit-id="image2video:li:5"><span data-edit-id="image2video:span:6" class="dot"></span><span data-edit-id="image2video:span:7"><b>PNG, JPG or WebP</b> up to 20 MB, any aspect.</span></li>
+        <li data-edit-id="image2video:li:8"><span data-edit-id="image2video:span:9" class="dot"></span><span data-edit-id="image2video:span:10"><b>Composition locked</b> so packaging and type stay readable.</span></li>
+        <li data-edit-id="image2video:li:11"><span data-edit-id="image2video:span:12" class="dot"></span><span data-edit-id="image2video:span:13"><b>Uploads deleted after 30 days</b> and never used for training.</span></li>
+      </ul>
+    </div>
+    <div data-edit-id="image2video:div:14" class="pair">
+      <figure class="frame">
+        <div data-edit-id="image2video:div:15" class="shot r-sq" data-img="Image-to-video pair 1"><span data-edit-id="image2video:span:16">Source image</span></div>
+        <figcaption data-edit-id="image2video:figcaption:17" class="cap"><span data-edit-id="image2video:span:18">Upload</span><span data-edit-id="image2video:span:19">1:1</span></figcaption>
+      </figure>
+      <figure class="frame">
+        <div data-edit-id="image2video:div:20" class="shot r-sq" data-img="Image-to-video pair 2"><span data-edit-id="image2video:span:21">Motion pass frame</span></div>
+        <figcaption data-edit-id="image2video:figcaption:22" class="cap"><span data-edit-id="image2video:span:23">Result</span><span data-edit-id="image2video:span:24">8s</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section data-sec="notify" id="notify">
+  <div data-edit-id="notify:div:0" class="wrap notify-grid">
+    <div data-edit-id="notify:div:1" class="copy">
+      <p data-edit-id="notify:p:2" class="eyebrow">Channel notifications</p>
+      <h2 data-edit-id="notify:h2:3">The render finds you, not the other way round.</h2>
+      <p data-edit-id="notify:p:4">Pick a channel per project — #social-drops for campaign cuts, a private channel for client work. The moment a clip finishes, the file, its prompt and its specs are posted there.</p>
+      <div data-edit-id="notify:div:5" class="ctas"><a data-edit-id="notify:a:6" class="btn btn-ghost" href="#contact">Set up a destination channel</a></div>
+    </div>
+    <div data-edit-id="notify:div:7" class="alert">
+      <div data-edit-id="notify:div:8" class="alert-row">
+        <span data-edit-id="notify:span:9" class="pill">#social-drops</span>
+        <span data-edit-id="notify:span:10" class="alert-sub">Alert sent 10:15</span>
+      </div>
+      <p data-edit-id="notify:p:11" class="alert-line">Render complete — “Neon rain over a night market”. 8s · 1080p · 9:16.</p>
+      <div data-edit-id="notify:div:12" class="bar"><i></i></div>
+      <p data-edit-id="notify:p:13" class="alert-sub">Queued 10:13 · rendered in 47s · posted automatically</p>
+    </div>
+  </div>
+</section>
+
+<section data-sec="gallery" id="gallery">
+  <div data-edit-id="gallery:div:0" class="wrap-left">
+    <div data-edit-id="gallery:div:1" class="gal-head">
+      <div data-edit-id="gallery:div:2">
+        <p data-edit-id="gallery:p:3" class="eyebrow">Made in VidSlack</p>
+        <h2 data-edit-id="gallery:h2:4">Clips that landed in a channel this week.</h2>
+      </div>
+      <p data-edit-id="gallery:p:5" class="meta-note">All rendered from a prompt or a single still</p>
+    </div>
+    <div data-edit-id="gallery:div:6" class="gal">
+      <figure class="frame">
+        <div data-edit-id="gallery:div:7" class="shot r-wide" data-img="Clip still 1"><span data-edit-id="gallery:span:8">Clip still</span></div>
+        <figcaption data-edit-id="gallery:figcaption:9" class="cap"><span data-edit-id="gallery:span:10">“Neon rain, night market”</span><span data-edit-id="gallery:span:11">8s</span></figcaption>
+      </figure>
+      <figure class="frame">
+        <div data-edit-id="gallery:div:12" class="shot r-wide" data-img="Clip still 2"><span data-edit-id="gallery:span:13">Clip still</span></div>
+        <figcaption data-edit-id="gallery:figcaption:14" class="cap"><span data-edit-id="gallery:span:15">“Paper sculpture unfolding”</span><span data-edit-id="gallery:span:16">5s</span></figcaption>
+      </figure>
+      <figure class="frame">
+        <div data-edit-id="gallery:div:17" class="shot r-wide" data-img="Clip still 3"><span data-edit-id="gallery:span:18">Clip still</span></div>
+        <figcaption data-edit-id="gallery:figcaption:19" class="cap"><span data-edit-id="gallery:span:20">“Runner cresting a ridge”</span><span data-edit-id="gallery:span:21">12s</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section data-sec="voices" id="voices">
+  <div data-edit-id="voices:div:0" class="wrap-left">
+    <p data-edit-id="voices:p:1" class="eyebrow">Teams using it</p>
+    <h2 data-edit-id="voices:h2:2">Fewer tabs, faster cuts.</h2>
+    <div data-edit-id="voices:div:3" class="voices">
+      <figure>
+        <blockquote data-edit-id="voices:blockquote:4">“I brief the clip in the same place I brief the team. The file shows up in #social-drops before the standup ends.”</blockquote>
+        <div data-edit-id="voices:div:5" class="who">
+          <div data-edit-id="voices:div:6" class="avatar" data-img="Customer portrait 1"></div>
+          <p data-edit-id="voices:p:7"><b>Maya Oyelaran</b>Social lead, Fernhill Kombucha</p>
+        </div>
+      </figure>
+      <figure>
+        <blockquote data-edit-id="voices:blockquote:8">“Image-to-video kept our packaging type sharp, which no other tool we tried managed. Client channel gets the cut directly.”</blockquote>
+        <div data-edit-id="voices:div:9" class="who">
+          <div data-edit-id="voices:div:10" class="avatar" data-img="Customer portrait 2"></div>
+          <p data-edit-id="voices:p:11"><b>Deniz Karaca</b>Founder, Twelve-Point Studio</p>
+        </div>
+      </figure>
+      <figure>
+        <blockquote data-edit-id="voices:blockquote:12">“Sixty renders a month, one channel, zero chasing. The prompt stays attached, so we can re-run a winner.”</blockquote>
+        <div data-edit-id="voices:div:13" class="who">
+          <div data-edit-id="voices:div:14" class="avatar" data-img="Customer portrait 3"></div>
+          <p data-edit-id="voices:p:15"><b>Rob Sandvik</b>Product marketing, Kestrel Analytics</p>
+        </div>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section data-sec="pricing" id="pricing">
+  <div data-edit-id="pricing:div:0" class="wrap-left">
+    <div data-edit-id="pricing:div:1" class="price-head">
+      <p data-edit-id="pricing:p:2" class="eyebrow">Pricing</p>
+      <h2 data-edit-id="pricing:h2:3">Pay for renders, not seats.</h2>
+      <p data-edit-id="pricing:p:4" class="body">Every plan includes the Slack connection, channel notifications and unlimited teammates in the workspace.</p>
+    </div>
+    <div data-edit-id="pricing:div:5" class="tiers">
+      <div data-edit-id="pricing:div:6" class="tier">
+        <span data-edit-id="pricing:span:7" class="pill">Trial</span>
+        <p data-edit-id="pricing:p:8" class="amount">$0<small> / forever</small></p>
+        <ul>
+          <li data-edit-id="pricing:li:9">5 renders per month</li>
+          <li data-edit-id="pricing:li:10">720p, up to 5 seconds</li>
+          <li data-edit-id="pricing:li:11">One notification channel</li>
+          <li data-edit-id="pricing:li:12">Text to video</li>
+        </ul>
+        <a data-edit-id="pricing:a:13" class="btn btn-ghost" href="#contact">Start free</a>
+      </div>
+      <div data-edit-id="pricing:div:14" class="tier hot">
+        <span data-edit-id="pricing:span:15" class="pill">Studio</span>
+        <p data-edit-id="pricing:p:16" class="amount">$39<small> / month</small></p>
+        <ul>
+          <li data-edit-id="pricing:li:17">60 renders per month</li>
+          <li data-edit-id="pricing:li:18">1080p, up to 12 seconds</li>
+          <li data-edit-id="pricing:li:19">Three notification channels</li>
+          <li data-edit-id="pricing:li:20">Text and image to video</li>
+        </ul>
+        <a data-edit-id="pricing:a:21" class="btn btn-primary" href="#contact">Connect workspace</a>
+      </div>
+      <div data-edit-id="pricing:div:22" class="tier">
+        <span data-edit-id="pricing:span:23" class="pill">Scale</span>
+        <p data-edit-id="pricing:p:24" class="amount">$149<small> / month</small></p>
+        <ul>
+          <li data-edit-id="pricing:li:25">300 renders per month</li>
+          <li data-edit-id="pricing:li:26">4K upscale, priority queue</li>
+          <li data-edit-id="pricing:li:27">Unlimited channels, private included</li>
+          <li data-edit-id="pricing:li:28">90-day render archive</li>
+        </ul>
+        <a data-edit-id="pricing:a:29" class="btn btn-ghost" href="#contact">Talk to us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-sec="faq" id="faq">
+  <div data-edit-id="faq:div:0" class="wrap grid12">
+    <div data-edit-id="faq:div:1" class="faq-title">
+      <p data-edit-id="faq:p:2" class="eyebrow">Questions</p>
+      <h2 data-edit-id="faq:h2:3">Before you connect.</h2>
+    </div>
+    <div data-edit-id="faq:div:4" class="faq-list">
+      <details open>
+        <summary data-edit-id="faq:summary:5">Which Slack permissions do you request?<span data-edit-id="faq:span:6" aria-hidden="true">—</span></summary>
+        <p data-edit-id="faq:p:7">Three scopes: read channel names, post messages, and upload files. We never read message history, and you can revoke access from your Slack app settings.</p>
+      </details>
+      <details open>
+        <summary data-edit-id="faq:summary:8">How long does a render take?<span data-edit-id="faq:span:9" aria-hidden="true">—</span></summary>
+        <p data-edit-id="faq:p:10">40–90 seconds for a 5–12 second clip at 1080p. A 4K upscale adds roughly two minutes. Queue position is shown while you wait, and the alert arrives whether the tab is open or not.</p>
+      </details>
+      <details open>
+        <summary data-edit-id="faq:summary:11">Can it post to a private channel?<span data-edit-id="faq:span:12" aria-hidden="true">—</span></summary>
+        <p data-edit-id="faq:p:13">Yes, once the VidSlack app is invited to that channel. Private destinations are available on Scale.</p>
+      </details>
+      <details open>
+        <summary data-edit-id="faq:summary:14">What happens to my prompts and uploads?<span data-edit-id="faq:span:15" aria-hidden="true">—</span></summary>
+        <p data-edit-id="faq:p:16">Stored for 30 days so you can re-download or re-run, then deleted. Nothing you upload or write is used to train models.</p>
+      </details>
+      <details open>
+        <summary data-edit-id="faq:summary:17">Do I need a workspace admin to install it?<span data-edit-id="faq:span:18" aria-hidden="true">—</span></summary>
+        <p data-edit-id="faq:p:19">Only if your workspace requires app approval. In that case the connect flow generates a request your admin can approve in one click.</p>
+      </details>
+      <details open>
+        <summary data-edit-id="faq:summary:20">Which formats come back?<span data-edit-id="faq:span:21" aria-hidden="true">—</span></summary>
+        <p data-edit-id="faq:p:22">MP4 (H.264) at 9:16, 1:1 or 16:9, up to 12 seconds, plus a JPG cover frame attached to the same message.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section data-sec="contact" id="contact">
+  <div data-edit-id="contact:div:0" class="wrap grid12">
+    <div data-edit-id="contact:div:1" class="c-copy">
+      <p data-edit-id="contact:p:2" class="eyebrow">Talk to us</p>
+      <h2 data-edit-id="contact:h2:3">Rolling this out to a whole workspace?</h2>
+      <p data-edit-id="contact:p:4" class="body">Tell us how many channels and roughly how many renders a month. We’ll reply with a plan, security details and an install link for your admin — usually within one business day.</p>
+      <p data-edit-id="contact:p:5" class="meta-note">Replies from a person, not a bot</p>
+    </div>
+    <form class="c-form" method="post">
+      <label data-edit-id="contact:label:6">Name
+        <input type="text" name="name" placeholder="Maya Oyelaran" required>
+      </label>
+      <label data-edit-id="contact:label:7">Work email
+        <input type="email" name="email" placeholder="you@company.com" required>
+      </label>
+      <label data-edit-id="contact:label:8">What are you rendering?
+        <textarea name="message" placeholder="Vertical launch teasers for two brands, posted to three channels, ~80 clips a month." required></textarea>
+      </label>
+      <button data-edit-id="contact:button:9" class="btn btn-primary" type="submit">Send message</button>
+    </form>
+  </div>
+</section>
+
+<footer data-sec="footer">
+  <a data-edit-id="footer:a:0" class="brand" href="#hero"><span data-edit-id="footer:span:1" class="logo">Logo</span><span data-edit-id="footer:span:2" class="brandname">VidSlack</span></a>
+  <nav class="flinks">
+    <a data-edit-id="footer:a:3" href="#how">How it works</a>
+    <a data-edit-id="footer:a:4" href="#text2video">Features</a>
+    <a data-edit-id="footer:a:5" href="#pricing">Pricing</a>
+    <a data-edit-id="footer:a:6" href="#faq">FAQ</a>
+    <a data-edit-id="footer:a:7" href="#contact">Contact</a>
+  </nav>
+  <p data-edit-id="footer:p:8" class="copy">© 2024 VidSlack. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

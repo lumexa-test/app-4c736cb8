@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Multi-tenancy pattern ────────────────────────────────────────────────────
+// tenantId is a string key that scopes every row to a specific project/tenant.
+// For the MVP generator: each generated project gets its own tenantId value.
+// Always filter queries by tenantId when serving multi-tenant data.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  // Additive extension on top of "auth is done" — every domain page needs a
+  // human name to show instead of email/id. Nullable so the frozen
+  // seed.ts admin-upsert (which never sets it) keeps working; callers fall
+  // back to the email local-part when null (see backend/src/lib/displayName.ts).
+  displayName String?  @map("display_name")
+  tenantId    String   @default("default") @map("tenant_id")
+  // Every generated app ships with admin support out of the box. The
+  // first admin row is created by `prisma/seed.ts` (idempotent upsert);
+  // additional admins are promoted by toggling this flag.
+  isAdmin     Boolean  @default(false) @map("is_admin")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+// ── DOMAIN MODELS GO HERE ─────────────────────────────────────────────
+// Add the app's domain models below. Every user-visible lifecycle event
+// gets a timestamp field; humans are displayed by name, never email/id.
+
+// Per-tenant configuration: Slack alert channel + the video-generation API
+// key. Google Veo / Slack are "planned for a future version" per the PRD, so
+// this table gates + simulates them rather than calling real external APIs.
+model TenantSettings {
+  id             Int      @id @default(autoincrement())
+  tenantId       String   @unique @map("tenant_id")
+  slackConnected Boolean  @default(false) @map("slack_connected")
+  slackChannel   String?  @map("slack_channel")
+  veoApiKey      String?  @map("veo_api_key")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("tenant_settings")
+}
+
+model VideoJob {
+  id                 Int      @id @default(autoincrement())
+  tenantId           String   @map("tenant_id")
+  creatorId          Int      @map("creator_id")
+  creatorDisplayName String   @map("creator_display_name")
+  title              String
+  prompt             String
+  mode               String   // 'text' | 'image'
+  sourceImageUrl     String?  @map("source_image_url")
+  status             String   @default("queued") // queued | rendering | completed | failed
+  videoUrl           String?  @map("video_url")
+  errorMessage       String?  @map("error_message")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([creatorId])
+  @@map("video_jobs")
+}
+
+// Workspace feed — one shared, tenant-wide channel-style stream.
+model Message {
+  id                Int      @id @default(autoincrement())
+  tenantId          String   @map("tenant_id")
+  authorId          Int      @map("author_id")
+  authorDisplayName String   @map("author_display_name")
+  body              String
+  isBot             Boolean  @default(false) @map("is_bot")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("messages")
+}
+
+// 1:1 direct messages between any two workspace members.
+model DirectMessage {
+  id                   Int      @id @default(autoincrement())
+  tenantId             String   @map("tenant_id")
+  senderId             Int      @map("sender_id")
+  senderDisplayName    String   @map("sender_display_name")
+  recipientId          Int      @map("recipient_id")
+  recipientDisplayName String   @map("recipient_display_name")
+  body                 String
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([senderId])
+  @@index([recipientId])
+  @@map("direct_messages")
+}
