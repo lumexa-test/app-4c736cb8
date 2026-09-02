@@ -45,8 +45,5 @@ export interface WorkspaceMember {
 }
 
 export interface TenantSettingsView {
-  slackConnected: boolean;
-  slackChannel: string | null;
   veoApiKeyConfigured: boolean;
-  availableChannels: string[];
 }

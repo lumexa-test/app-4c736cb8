@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import VideoJob from '../models/videoJob';
 import Settings from '../models/settings';
-import Message from '../models/message';
 import User from '../models/user';
 import { resolveDisplayName } from '../lib/displayName';
+import { notifySlackForUser } from '../custom/integrations/slack';
 
 const VALID_MODES = new Set(['text', 'image']);
 
@@ -26,16 +26,15 @@ function simulateGeneration(jobId: number, tenantId: string): void {
           videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
         });
         if (count > 0) {
-          const settings = await Settings.getOrCreate(tenantId);
-          if (settings.slackConnected && settings.slackChannel) {
-            await Message.create({
-              tenantId,
-              authorId: 0,
-              authorDisplayName: 'Slack Bot',
-              isBot: true,
-              body: `🎬 ${job.creatorDisplayName}'s video "${job.title}" just finished rendering — posted to ${settings.slackChannel}.`,
-            });
-          }
+          await notifySlackForUser(job.creatorId, {
+            text: `Your video "${job.title}" has finished rendering and is ready to view.`,
+            title: 'Video Ready',
+            fields: [
+              { label: 'Title', value: job.title },
+              { label: 'Mode', value: job.mode === 'image' ? 'Image-to-video' : 'Text-to-video' },
+              { label: 'Status', value: 'Completed' },
+            ],
+          });
         }
       } else {
         await VideoJob.transition(jobId, 'rendering', {

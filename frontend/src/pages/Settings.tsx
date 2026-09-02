@@ -1,23 +1,17 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { MessageCircle, KeyRound, CheckCircle2 } from 'lucide-react';
+import { KeyRound, CheckCircle2 } from 'lucide-react';
 import { PageContainer } from '@/components/AppLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ErrorState, LoadingState } from '@/components/common/states';
 import { apiClient, ApiError } from '@/lib/apiClient';
 import type { TenantSettingsView } from '@/types/domain';
 import type { FunctionComponent } from '@/common/types';
 
-// Admin-only. Slack OAuth and a real Google Veo integration are both
-// "planned for a future version" per the PRD — this simulates the connect
-// flow and the API-key cost gate so the rest of the app has something real
-// to check against.
 export const Settings = (): FunctionComponent => {
   const [settings, setSettings] = useState<TenantSettingsView | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,42 +26,6 @@ export const Settings = (): FunctionComponent => {
   }, []);
 
   useEffect(load, [load]);
-
-  const connectSlack = async () => {
-    setBusy(true);
-    try {
-      setSettings(await apiClient.post<TenantSettingsView>('/api/settings/slack/connect', {}));
-      toast.success('Slack connected');
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to connect Slack');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const disconnectSlack = async () => {
-    setBusy(true);
-    try {
-      setSettings(await apiClient.post<TenantSettingsView>('/api/settings/slack/disconnect', {}));
-      toast.success('Slack disconnected');
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to disconnect Slack');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const setChannel = async (channel: string) => {
-    setBusy(true);
-    try {
-      setSettings(await apiClient.put<TenantSettingsView>('/api/settings/slack/channel', { channel }));
-      toast.success(`Alerts will post to ${channel}`);
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Failed to set alert channel');
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const saveKey = async () => {
     if (!apiKey.trim()) return;
@@ -101,43 +59,7 @@ export const Settings = (): FunctionComponent => {
   return (
     <PageContainer>
       <div className="space-y-6">
-        <PageHeader title="Settings" description="Admin configuration for Slack alerts and video generation." />
-
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><MessageCircle className="size-5" /> Slack</CardTitle>
-            <CardDescription>Connect a workspace and pick the channel that gets notified when a video finishes rendering.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {settings.slackConnected ? (
-              <Badge className="bg-emerald-500/10 text-emerald-600"><CheckCircle2 className="size-3" /> Connected</Badge>
-            ) : (
-              <Badge className="bg-muted text-muted-foreground">Not connected</Badge>
-            )}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              {!settings.slackConnected ? (
-                <Button onClick={connectSlack} disabled={busy} className="sm:w-auto">Connect Slack</Button>
-              ) : (
-                <>
-                  <div className="space-y-1.5">
-                    <Label>Alert channel</Label>
-                    <Select value={settings.slackChannel ?? undefined} onValueChange={setChannel} disabled={busy}>
-                      <SelectTrigger className="w-[220px]">
-                        <SelectValue placeholder="Choose a channel" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {settings.availableChannels.map((c) => (
-                          <SelectItem key={c} value={c}>{c}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button variant="outline" onClick={disconnectSlack} disabled={busy} className="sm:mt-6">Disconnect</Button>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <PageHeader title="Settings" description="Admin configuration for video generation." />
 
         <Card className="shadow-card">
           <CardHeader>

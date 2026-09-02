@@ -103,3 +103,47 @@ model DirectMessage {
   @@index([recipientId])
   @@map("direct_messages")
 }
+
+model SlackConnection {
+  id           String    @id @default(uuid())
+  // The app's own User.id. NO Prisma @relation: schemaAppend is append-only and
+  // a relation would require adding a back-reference field to model User.
+  userId       Int       @unique @map("user_id")
+  slackUserId  String    @map("slack_user_id")
+  teamId       String    @default("") @map("team_id")
+  teamName     String    @default("") @map("team_name")
+  // Nullable so a dead grant keeps its identity (workspace, chosen channel)
+  // while holding no secrets — that is what lets the UI say "Reconnect".
+  accessToken  String?   @map("access_token")
+  scope        String    @default("")
+  // Where THIS user wants their alerts. Null until they pick one; sends are
+  // skipped (never guessed) while it is null.
+  channelId    String?   @map("channel_id")
+  channelName  String?   @map("channel_name")
+  // Set when Slack rejects the token. NEVER set on a 5xx, a rate limit, or a
+  // channel error — that would disconnect every user of the app at once.
+  needsReauth  Boolean   @default(false) @map("needs_reauth")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([slackUserId])
+  @@map("slack_connections")
+}
+
+model SlackOAuthState {
+  // The opaque `state` sent to Slack. Single-use: the callback deletes it
+  // before validating anything else, so a replayed callback finds nothing.
+  state       String   @id
+  userId      Int      @map("user_id")
+  // The EXACT redirect_uri sent at authorize time, replayed byte-for-byte in
+  // the token exchange. Stored rather than recomputed so a host change
+  // mid-flight (live preview -> deploy, custom domain attach) cannot break it.
+  redirectUri String   @map("redirect_uri")
+  // Where to send the browser afterwards. Validated as an app-relative path.
+  returnTo    String?  @map("return_to")
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("slack_oauth_states")
+}
