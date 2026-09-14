@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ErrorState, LoadingState } from '@/components/common/states';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { InitialsAvatar } from '@/components/common/InitialsAvatar';
+import { GeneratedVideo } from '@/components/integrations/GeneratedVideo';
 import { apiClient, ApiError } from '@/lib/apiClient';
 import { useAuthStore } from '@/store/authStore';
 import type { VideoJob, VideoJobStatus } from '@/types/domain';
@@ -130,7 +131,13 @@ export const VideoDetail = (): FunctionComponent => {
           <div className="space-y-4 lg:col-span-2">
             <Card className="shadow-card overflow-hidden">
               <CardContent className="p-0">
-                {job.status === 'completed' && job.videoUrl ? (
+                {job.veoJobId ? (
+                  <GeneratedVideo
+                    jobId={job.veoJobId}
+                    className="aspect-video w-full"
+                    posterUrl={job.sourceImageUrl ?? undefined}
+                  />
+                ) : job.status === 'completed' && job.videoUrl ? (
                   <video src={job.videoUrl} controls className="aspect-video w-full bg-black" />
                 ) : displayStatus === 'timed-out' ? (
                   <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 bg-muted text-center text-muted-foreground">
@@ -157,7 +164,7 @@ export const VideoDetail = (): FunctionComponent => {
                 <RefreshCw className="size-4" /> {retrying ? 'Starting retry…' : 'Retry generation'}
               </Button>
             )}
-            {job.status === 'completed' && (
+            {job.status === 'completed' && !job.veoJobId && (
               <Button onClick={handleDownload}>
                 <Download className="size-4" /> Download video
               </Button>

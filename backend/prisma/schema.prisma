@@ -64,6 +64,7 @@ model VideoJob {
   sourceImageUrl     String?  @map("source_image_url")
   status             String   @default("queued") // queued | rendering | completed | failed
   videoUrl           String?  @map("video_url")
+  veoJobId           String?  @map("veo_job_id")
   errorMessage       String?  @map("error_message")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
@@ -146,4 +147,32 @@ model SlackOAuthState {
 
   @@index([expiresAt])
   @@map("slack_oauth_states")
+}
+
+model VeoVideoJob {
+  id           String    @id @default(uuid())
+  // The app's own User.id. NO Prisma @relation: schemaAppend is append-only and
+  // a relation would require adding a back-reference field to model User.
+  userId       Int       @map("user_id")
+  prompt       String
+  // Veo's long-running operation name, polled until done. Worthless after the
+  // provider expires the job, which is why it is nullable and never exposed.
+  operationId  String?   @map("operation_id")
+  // pending | ready | failed
+  status       String    @default("pending")
+  // OUR permanent copy, never the provider's URI — theirs dies in ~48h. Set to
+  // the provider URI only as a degraded fallback when the app's own storage
+  // refused the file, and errorMessage then says so.
+  videoUrl     String?   @map("video_url")
+  durationSecs Int       @default(8) @map("duration_secs")
+  resolution   String    @default("720p")
+  aspectRatio  String    @default("16:9") @map("aspect_ratio")
+  model        String    @default("")
+  errorMessage String?   @map("error_message")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Drives both the user's history list and the per-user daily cost cap.
+  @@index([userId, createdAt])
+  @@map("veo_video_jobs")
 }

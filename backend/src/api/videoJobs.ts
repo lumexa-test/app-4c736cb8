@@ -1,50 +1,11 @@
 import { Request, Response } from 'express';
 import VideoJob from '../models/videoJob';
-import Settings from '../models/settings';
 import User from '../models/user';
 import { resolveDisplayName } from '../lib/displayName';
 import { notifySlackForUser } from '../custom/integrations/slack';
+import { isGoogleAIConfigured, startVideoGeneration } from '../custom/integrations/googleai';
 
 const VALID_MODES = new Set(['text', 'image']);
-
-/**
- * Google Veo is "planned for a future version" (per the PRD) — there is no
- * real generation backend to call. This simulates the queued -> rendering ->
- * completed|failed lifecycle with atomic conditional updates so concurrent
- * reads/deletes can never observe (or create) an inconsistent transition.
- */
-function simulateGeneration(jobId: number, tenantId: string): void {
-  setTimeout(async () => {
-    await VideoJob.transition(jobId, 'queued', { status: 'rendering' });
-    setTimeout(async () => {
-      const succeeded = Math.random() < 0.85;
-      const job = await VideoJob.getById(jobId);
-      if (!job) return; // deleted mid-flight
-      if (succeeded) {
-        const count = await VideoJob.transition(jobId, 'rendering', {
-          status: 'completed',
-          videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-        });
-        if (count > 0) {
-          await notifySlackForUser(job.creatorId, {
-            text: `Your video "${job.title}" has finished rendering and is ready to view.`,
-            title: 'Video Ready',
-            fields: [
-              { label: 'Title', value: job.title },
-              { label: 'Mode', value: job.mode === 'image' ? 'Image-to-video' : 'Text-to-video' },
-              { label: 'Status', value: 'Completed' },
-            ],
-          });
-        }
-      } else {
-        await VideoJob.transition(jobId, 'rendering', {
-          status: 'failed',
-          errorMessage: 'Generation failed. Please try again.',
-        });
-      }
-    }, 5000);
-  }, 2000);
-}
 
 async function list(req: Request, res: Response): Promise<any> {
   try {
@@ -60,10 +21,30 @@ async function list(req: Request, res: Response): Promise<any> {
 async function get(req: Request, res: Response): Promise<any> {
   try {
     const id = Number(req.params['id']);
-    const job = await VideoJob.getById(id);
+    let job = await VideoJob.getById(id);
     if (!job || job.tenantId !== req.user!.tenantId) {
       return res.status(404).json({ message: 'Video not found' });
     }
+
+    // Sync status from the kit's VeoVideoJob when still in progress
+    if (job.veoJobId && (job.status === 'queued' || job.status === 'rendering')) {
+      const updated = await VideoJob.syncVeoStatus(job.id, job.veoJobId, job.status);
+      if (updated) {
+        if (updated.status === 'completed') {
+          notifySlackForUser(updated.creatorId, {
+            text: `Your video "${updated.title}" has finished rendering and is ready to view.`,
+            title: 'Video Ready',
+            fields: [
+              { label: 'Title', value: updated.title },
+              { label: 'Mode', value: updated.mode === 'image' ? 'Image-to-video' : 'Text-to-video' },
+              { label: 'Status', value: 'Completed' },
+            ],
+          });
+        }
+        job = updated;
+      }
+    }
+
     return res.json(job);
   } catch (error) {
     console.error('Error fetching video job:', error);
@@ -88,9 +69,15 @@ async function create(req: Request, res: Response): Promise<any> {
       return res.status(400).json({ message: 'An uploaded image is required for image-to-video' });
     }
 
-    const configured = await Settings.isVeoConfigured(req.user!.tenantId);
-    if (!configured) {
+    if (!isGoogleAIConfigured()) {
       return res.status(503).json({ message: 'Google Veo is not configured.' });
+    }
+
+    const genResult = await startVideoGeneration(req.user!.id, prompt.trim(), {
+      imageUrl: mode === 'image' ? sourceImageUrl : undefined,
+    });
+    if (!genResult.ok) {
+      return res.status(503).json({ message: genResult.message });
     }
 
     const user = await User.getUserById(req.user!.id);
@@ -104,9 +91,9 @@ async function create(req: Request, res: Response): Promise<any> {
       prompt: prompt.trim(),
       mode,
       sourceImageUrl: mode === 'image' ? sourceImageUrl : null,
+      veoJobId: genResult.id,
     });
 
-    simulateGeneration(job.id, job.tenantId);
     return res.status(201).json(job);
   } catch (error) {
     console.error('Error creating video job:', error);
@@ -114,7 +101,6 @@ async function create(req: Request, res: Response): Promise<any> {
   }
 }
 
-// Retries never mutate the original (failed) job — they create a brand new one.
 async function retry(req: Request, res: Response): Promise<any> {
   try {
     const id = Number(req.params['id']);
@@ -126,9 +112,15 @@ async function retry(req: Request, res: Response): Promise<any> {
       return res.status(403).json({ message: 'You can only retry your own videos' });
     }
 
-    const configured = await Settings.isVeoConfigured(req.user!.tenantId);
-    if (!configured) {
+    if (!isGoogleAIConfigured()) {
       return res.status(503).json({ message: 'Google Veo is not configured.' });
+    }
+
+    const genResult = await startVideoGeneration(original.creatorId, original.prompt, {
+      imageUrl: original.mode === 'image' ? original.sourceImageUrl ?? undefined : undefined,
+    });
+    if (!genResult.ok) {
+      return res.status(503).json({ message: genResult.message });
     }
 
     const job = await VideoJob.create({
@@ -139,8 +131,8 @@ async function retry(req: Request, res: Response): Promise<any> {
       prompt: original.prompt,
       mode: original.mode,
       sourceImageUrl: original.sourceImageUrl,
+      veoJobId: genResult.id,
     });
-    simulateGeneration(job.id, job.tenantId);
     return res.status(201).json(job);
   } catch (error) {
     console.error('Error retrying video job:', error);

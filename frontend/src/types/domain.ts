@@ -12,6 +12,7 @@ export interface VideoJob {
   sourceImageUrl: string | null;
   status: VideoJobStatus;
   videoUrl: string | null;
+  veoJobId: string | null;
   errorMessage: string | null;
   createdAt: string;
   updatedAt: string;

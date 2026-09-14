@@ -15,9 +15,6 @@ import { apiClient, ApiError } from '@/lib/apiClient';
 import type { VideoJob, VideoJobMode } from '@/types/domain';
 import type { FunctionComponent } from '@/common/types';
 
-// Video Studio — text-to-video and image-to-video. Google Veo is "planned
-// for a future version" (per the PRD); the backend gates generation behind
-// a per-tenant API key and returns 503 until an admin configures one.
 export const Studio = (): FunctionComponent => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<VideoJobMode>('text');
@@ -46,7 +43,7 @@ export const Studio = (): FunctionComponent => {
         mode,
         sourceImageUrl: mode === 'image' ? sourceImageUrl : undefined,
       });
-      toast.success(`"${job.title}" is generating`, { description: 'This can take up to a few minutes — track progress on the video page.' });
+      toast.success(`"${job.title}" is generating`, { description: 'This can take a few minutes — track progress on the video page.' });
       navigate(`/videos/${job.id}`);
     } catch (err) {
       if (err instanceof ApiError && err.status === 503) {
@@ -69,7 +66,7 @@ export const Studio = (): FunctionComponent => {
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <div>
               <p className="font-medium">{gateError}</p>
-              <p className="text-muted-foreground">Ask a workspace admin to add a Google Veo API key in Settings.</p>
+              <p className="text-muted-foreground">A platform admin needs to set the GEMINI_API_KEY environment variable to enable generation.</p>
             </div>
           </div>
         )}

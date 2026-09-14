@@ -14,6 +14,7 @@ import uploadRoutes from './custom/uploads';
 import config from '../config';
 import { prisma } from './lib/prisma';
 import slackRouter from './custom/integrations/slack';
+import videoRouter from './custom/integrations/googleai';
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use('/api/users', userRoutes);
 // Example: app.use('/api/search', searchRoutes);
 app.use('/api/uploads', uploadRoutes); // image uploads → platform proxy (see "Image uploads" in backend/CLAUDE.md; never touch S3/AWS directly)
 app.use('/api/slack', slackRouter);
+app.use('/api/video', videoRouter);
 
 // Serve frontend static files (production: vite build output copied to public/)
 const publicDir = join(__dirname, '..', '..', 'public');

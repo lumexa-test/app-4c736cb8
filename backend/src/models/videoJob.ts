@@ -8,6 +8,7 @@ async function create(data: {
   prompt: string;
   mode: string;
   sourceImageUrl?: string | null;
+  veoJobId?: string | null;
 }) {
   return prisma.videoJob.create({ data });
 }
@@ -37,4 +38,26 @@ async function transition(
   return result.count;
 }
 
-export default { create, listByTenant, getById, remove, transition };
+/**
+ * Sync the app's VideoJob status from the kit's VeoVideoJob.
+ * Returns the updated VideoJob if status changed, null otherwise.
+ */
+async function syncVeoStatus(id: number, veoJobId: string, currentStatus: string) {
+  const veoJob = await prisma.veoVideoJob.findUnique({ where: { id: veoJobId } });
+  if (!veoJob) return null;
+  if (veoJob.status === 'ready' && currentStatus !== 'completed') {
+    return prisma.videoJob.update({ where: { id }, data: { status: 'completed' } });
+  }
+  if (veoJob.status === 'failed' && currentStatus !== 'failed') {
+    return prisma.videoJob.update({
+      where: { id },
+      data: { status: 'failed', errorMessage: veoJob.errorMessage ?? 'Generation failed.' },
+    });
+  }
+  if (veoJob.status === 'pending' && currentStatus === 'queued') {
+    return prisma.videoJob.update({ where: { id }, data: { status: 'rendering' } });
+  }
+  return null;
+}
+
+export default { create, listByTenant, getById, remove, transition, syncVeoStatus };
