@@ -86,7 +86,7 @@ export const Studio = (): FunctionComponent => {
               <form onSubmit={handleSubmit} className="mt-6 space-y-5">
                 <div className="space-y-1.5">
                   <Label htmlFor="title">Title</Label>
-                  <Input id="title" placeholder="Spring launch teaser" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} />
+                  <Input id="title" placeholder="Spring launch teaser" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} />
                 </div>
 
                 <TabsContent value="text" className="mt-0 space-y-1.5">
@@ -97,9 +97,9 @@ export const Studio = (): FunctionComponent => {
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     rows={4}
-                    maxLength={500}
+                    maxLength={1000}
                   />
-                  <p className="text-xs text-muted-foreground">{prompt.trim().length}/500 characters — minimum 10.</p>
+                  <p className="text-xs text-muted-foreground">{prompt.trim().length}/1000 characters.</p>
                 </TabsContent>
 
                 <TabsContent value="image" className="mt-0 space-y-5">
@@ -112,9 +112,9 @@ export const Studio = (): FunctionComponent => {
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       rows={4}
-                      maxLength={500}
+                      maxLength={1000}
                     />
-                    <p className="text-xs text-muted-foreground">{prompt.trim().length}/500 characters — minimum 10.</p>
+                    <p className="text-xs text-muted-foreground">{prompt.trim().length}/1000 characters.</p>
                   </div>
                 </TabsContent>
 

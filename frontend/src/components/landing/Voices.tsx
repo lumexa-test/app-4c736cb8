@@ -11,7 +11,7 @@ const VOICES = [
   },
   {
     quote:
-      '“Image-to-video kept our packaging type sharp, which no other tool we tried managed. Client channel gets the cut directly.”',
+      '“Animating a still kept our packaging type sharp, which no other tool we tried managed. Client channel gets the cut directly.”',
     avatar: '/uploads/label-customer-portrait-2-a52ab1b4.png',
     name: 'Deniz Karaca',
     role: 'Founder, Twelve-Point Studio',

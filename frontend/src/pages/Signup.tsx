@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,9 +12,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import type { FunctionComponent } from '@/common/types';
 
 const signupSchema = Yup.object({
-  displayName: Yup.string().trim().min(2, 'Name must be at least 2 characters').max(80, 'Name is too long').required('Your name is required'),
+  displayName: Yup.string().trim().required('Your name is required').min(2, 'Name must be at least 2 characters').max(80, 'Name is too long'),
   email: Yup.string().email('Invalid email address').required('Email is required'),
-  password: Yup.string().min(8, 'Password must be at least 8 characters').required('Password is required'),
+  password: Yup.string().required('Password is required').min(8, 'Password must be at least 8 characters'),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref('password')], 'Passwords do not match')
     .required('Please confirm your password'),
@@ -36,7 +37,8 @@ export const Signup = (): FunctionComponent => {
     setServerError('');
     try {
       await signup(values.email, values.password, values.displayName);
-      navigate('/dashboard');
+      toast.success('Account created — welcome to VidSlack');
+      navigate('/workspace');
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Sign up failed');
     }

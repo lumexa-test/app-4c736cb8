@@ -12,7 +12,7 @@ export const ImageToVideo = (): FunctionComponent => {
       >
         <div data-edit-id="image2video:div:1" className="grid gap-5 lg:order-2">
           <p data-edit-id="image2video:p:2" className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Image to video
+            Image-to-Video
           </p>
           <h2 data-edit-id="image2video:h2:3" className="font-display text-3xl font-light tracking-[-0.02em] text-foreground sm:text-4xl">
             Give it one still. It gives back motion.

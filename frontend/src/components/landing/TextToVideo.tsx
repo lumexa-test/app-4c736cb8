@@ -8,7 +8,7 @@ export const TextToVideo = (): FunctionComponent => {
       <div data-edit-id="text2video:div:0" className="mx-auto grid w-full max-w-[1240px] items-center gap-10 px-6 py-16 sm:px-10 sm:py-24 lg:grid-cols-[5fr_7fr] lg:gap-14">
         <div data-edit-id="text2video:div:1" className="grid gap-5">
           <p data-edit-id="text2video:p:2" className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Text to video
+            Text-to-Video
           </p>
           <h2 data-edit-id="text2video:h2:3" className="font-display text-3xl font-light tracking-[-0.02em] text-foreground sm:text-4xl">
             One line in. A finished clip out.

@@ -39,10 +39,10 @@ async function create(req: Request, res: Response): Promise<any> {
       return res.status(400).json({ message: 'A recipient is required' });
     }
     if (recipientIdNum === req.user!.id) {
-      return res.status(400).json({ message: 'You cannot message yourself' });
+      return res.status(400).json({ message: "You can't message yourself." });
     }
-    if (!body || typeof body !== 'string' || !body.trim() || body.trim().length > 2000) {
-      return res.status(400).json({ message: 'Message must be between 1 and 2000 characters' });
+    if (!body || typeof body !== 'string' || !body.trim() || body.trim().length > 4000) {
+      return res.status(400).json({ message: 'Message must be between 1 and 4000 characters' });
     }
 
     const [sender, recipient] = await Promise.all([

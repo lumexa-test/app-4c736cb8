@@ -48,6 +48,7 @@ export const Workspace = (): FunctionComponent => {
       const message = await apiClient.post<WorkspaceMessage>('/api/messages', { body: body.trim() });
       setMessages((prev) => (prev ? [...prev, message] : [message]));
       setBody('');
+      toast.success('Message sent');
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : 'Failed to send message');
     } finally {
@@ -104,7 +105,7 @@ export const Workspace = (): FunctionComponent => {
                 onChange={(e) => setBody(e.target.value)}
                 placeholder="Message the workspace…"
                 rows={2}
-                maxLength={2000}
+                maxLength={4000}
                 className="flex-1"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {

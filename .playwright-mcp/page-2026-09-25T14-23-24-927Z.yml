@@ -1,0 +1,68 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - navigation [ref=e5]:
+        - link "VidSlack VidSlack" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "VidSlack" [ref=e7]
+          - generic [ref=e8]: VidSlack
+        - generic [ref=e9]:
+          - link "How it works" [ref=e10] [cursor=pointer]:
+            - /url: /#how
+          - link "Features" [ref=e11] [cursor=pointer]:
+            - /url: /#text2video
+          - link "Pricing" [ref=e12] [cursor=pointer]:
+            - /url: /#pricing
+          - link "FAQ" [ref=e13] [cursor=pointer]:
+            - /url: /#faq
+        - generic [ref=e14]:
+          - link "Sign in" [ref=e15] [cursor=pointer]:
+            - /url: /login
+          - link "Get started" [ref=e16] [cursor=pointer]:
+            - /url: /signup
+    - main [ref=e17]:
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - heading "Create an account" [level=3] [ref=e21]
+          - paragraph [ref=e22]: Get started by creating your free account
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - generic [ref=e25]:
+              - text: Your name
+              - textbox "Your name" [ref=e26]:
+                - /placeholder: Maya Oyelaran
+            - generic [ref=e27]:
+              - text: Email
+              - textbox "Email" [ref=e28]:
+                - /placeholder: you@example.com
+            - generic [ref=e29]:
+              - text: Password
+              - textbox "Password" [ref=e30]
+            - generic [ref=e31]:
+              - text: Confirm password
+              - textbox "Confirm password" [ref=e32]
+          - generic [ref=e33]:
+            - button "Create account" [ref=e34]
+            - paragraph [ref=e36]:
+              - text: Already have an account?
+              - link "Sign in" [ref=e37] [cursor=pointer]:
+                - /url: /login
+    - contentinfo [ref=e38]:
+      - generic [ref=e39]:
+        - link "VidSlack VidSlack" [ref=e40] [cursor=pointer]:
+          - /url: /
+          - img "VidSlack" [ref=e41]
+          - generic [ref=e42]: VidSlack
+        - navigation [ref=e43]:
+          - link "How it works" [ref=e44] [cursor=pointer]:
+            - /url: /#how
+          - link "Features" [ref=e45] [cursor=pointer]:
+            - /url: /#text2video
+          - link "Pricing" [ref=e46] [cursor=pointer]:
+            - /url: /#pricing
+          - link "FAQ" [ref=e47] [cursor=pointer]:
+            - /url: /#faq
+          - link "Contact" [ref=e48] [cursor=pointer]:
+            - /url: /#contact
+        - paragraph [ref=e49]: © 2026 VidSlack. All rights reserved.
+  - region "Notifications alt+T"

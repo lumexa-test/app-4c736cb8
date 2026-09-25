@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +33,8 @@ export const Login = (): FunctionComponent => {
     setServerError('');
     try {
       await login(values.email, values.password);
-      navigate('/dashboard');
+      toast.success('Signed in successfully');
+      navigate('/workspace');
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Login failed');
     }

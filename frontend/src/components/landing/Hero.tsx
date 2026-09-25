@@ -42,14 +42,14 @@ export const Hero = (): FunctionComponent => {
           data-edit-id="hero:h1:3"
           className="max-w-[22ch] font-display text-4xl font-light tracking-[-0.03em] text-foreground sm:text-6xl lg:text-7xl"
         >
-          Prompt a video. Post it to Slack.
+          Slack, plus AI video.
         </h1>
 
         <div data-edit-id="hero:div:4" className="grid items-end gap-10 lg:grid-cols-[4fr_7fr]">
           <div data-edit-id="hero:div:5" className="grid gap-5">
             <p data-edit-id="hero:p:6" className="text-lg leading-snug text-foreground">
-              VidSlack renders clips from a line of text or a single image, then drops the finished file in the channel you
-              chose. No exporting, no re-uploading.
+              Message your workspace, generate short videos from text or images, and get an alert in Slack the second
+              they're ready.
             </p>
             <div data-edit-id="hero:div:7" className="flex flex-wrap gap-3">
               <Button
@@ -58,7 +58,7 @@ export const Hero = (): FunctionComponent => {
                 size="lg"
                 className="w-full text-xs font-semibold uppercase tracking-[0.08em] sm:w-auto"
               >
-                <Link to="/signup">Connect your workspace</Link>
+                <Link to="/signup">Get started</Link>
               </Button>
               <Button
                 data-edit-id="hero:a:9"
@@ -67,7 +67,7 @@ export const Hero = (): FunctionComponent => {
                 size="lg"
                 className="w-full text-xs font-semibold uppercase tracking-[0.08em] sm:w-auto"
               >
-                <a href="#how">See how it works</a>
+                <Link to="/login">Sign in</Link>
               </Button>
             </div>
             <p data-edit-id="hero:p:10" className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">

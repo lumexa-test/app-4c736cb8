@@ -16,8 +16,8 @@ async function list(req: Request, res: Response): Promise<any> {
 async function create(req: Request, res: Response): Promise<any> {
   try {
     const { body } = req.body;
-    if (!body || typeof body !== 'string' || !body.trim() || body.trim().length > 2000) {
-      return res.status(400).json({ message: 'Message must be between 1 and 2000 characters' });
+    if (!body || typeof body !== 'string' || !body.trim() || body.trim().length > 4000) {
+      return res.status(400).json({ message: 'Message must be between 1 and 4000 characters' });
     }
     const user = await User.getUserById(req.user!.id);
     if (!user) return res.status(401).json({ message: 'Unauthorized' });

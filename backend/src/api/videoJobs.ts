@@ -25,6 +25,10 @@ async function get(req: Request, res: Response): Promise<any> {
     if (!job || job.tenantId !== req.user!.tenantId) {
       return res.status(404).json({ message: 'Video not found' });
     }
+    // Members may only view their own jobs; admins see any job in the tenant.
+    if (job.creatorId !== req.user!.id && !req.user!.isAdmin) {
+      return res.status(403).json({ message: "You don't have access to this video." });
+    }
 
     // Sync status from the kit's VeoVideoJob when still in progress
     if (job.veoJobId && (job.status === 'queued' || job.status === 'rendering')) {
@@ -56,11 +60,11 @@ async function create(req: Request, res: Response): Promise<any> {
   try {
     const { title, prompt, mode, sourceImageUrl } = req.body;
 
-    if (!title || typeof title !== 'string' || !title.trim() || title.trim().length > 120) {
-      return res.status(400).json({ message: 'Title is required (max 120 characters)' });
+    if (!title || typeof title !== 'string' || !title.trim() || title.trim().length > 80) {
+      return res.status(400).json({ message: 'Title is required (max 80 characters)' });
     }
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 10 || prompt.trim().length > 500) {
-      return res.status(400).json({ message: 'Prompt must be between 10 and 500 characters' });
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 1 || prompt.trim().length > 1000) {
+      return res.status(400).json({ message: 'Prompt must be between 1 and 1000 characters' });
     }
     if (!VALID_MODES.has(mode)) {
       return res.status(400).json({ message: 'Mode must be "text" or "image"' });
