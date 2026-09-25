@@ -33,6 +33,11 @@ Test:
    matter — only that the action is not possible.
 5. **Nothing is broken** — no page in a journey crashes, shows a blank screen or
    an unhandled error, and actions do not fail with a server error.
+6. **Every page exists and renders** — for each role, every page the PRD
+   describes and every link in the app's navigation opens a real page: it loads,
+   is not blank, shows no error/crash/"not found" screen, and has its main
+   content area (e.g. the list, form or dashboard that page is for). Check
+   presence only — never its wording, layout or exact contents.
 
 Do NOT test (these are not failures, even if they differ from the PRD):
 - Wording, copy, headings, button/link labels, toast/validation message text,
