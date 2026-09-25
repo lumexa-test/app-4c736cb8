@@ -10,6 +10,7 @@ import { ImageToVideo } from '@/components/landing/ImageToVideo';
 import { ChannelNotifications } from '@/components/landing/ChannelNotifications';
 import { Gallery } from '@/components/landing/Gallery';
 import { Voices } from '@/components/landing/Voices';
+import { Pricing } from '@/components/landing/Pricing';
 import { Faq } from '@/components/landing/Faq';
 import { Contact } from '@/components/landing/Contact';
 import type { FunctionComponent } from '@/common/types';
@@ -24,6 +25,7 @@ export const Landing = (): FunctionComponent => {
       <ChannelNotifications />
       <Gallery />
       <Voices />
+      <Pricing />
       <Faq />
       <Contact />
     </div>

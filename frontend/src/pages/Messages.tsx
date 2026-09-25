@@ -74,7 +74,6 @@ export const Messages = (): FunctionComponent => {
       const message = await apiClient.post<DirectMessage>('/api/direct-messages', { recipientId: selected.id, body: body.trim() });
       setThread((prev) => (prev ? [...prev, message] : [message]));
       setBody('');
-      toast.success('Direct message sent');
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : 'Failed to send message');
     } finally {
@@ -167,7 +166,7 @@ export const Messages = (): FunctionComponent => {
                       onChange={(e) => setBody(e.target.value)}
                       placeholder={`Message ${selected.displayName}…`}
                       rows={1}
-                      maxLength={4000}
+                      maxLength={2000}
                       className="flex-1"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {

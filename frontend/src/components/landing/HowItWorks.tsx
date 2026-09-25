@@ -5,23 +5,18 @@ const WORKFLOW_BG = '/uploads/label-workflow-screenshot-1-edb856a8.png';
 const STEPS = [
   {
     num: '01',
-    title: 'Connect Slack',
-    body: 'An admin links the Slack workspace via OAuth so messages and completion alerts can post to your chosen channel.',
+    title: 'Connect the workspace',
+    body: 'Sign in with Slack OAuth. We request read access to channel names and permission to post files — nothing else. Revoke it from Slack at any time.',
   },
   {
     num: '02',
-    title: 'Add your video key',
-    body: 'The admin saves the video-generation key in Settings. Your key covers your own generation costs.',
+    title: 'Write a prompt or drop an image',
+    body: 'Type the shot you want, or upload one still and let the motion pass do the rest. Pick aspect ratio and length before it queues.',
   },
   {
     num: '03',
-    title: 'Generate',
-    body: 'Type a prompt or drop an image in the Video Studio and submit. Watch rendering progress live on the video page.',
-  },
-  {
-    num: '04',
-    title: 'Get alerted',
-    body: 'The moment a clip finishes, VidSlack posts an alert to your selected Slack channel — no progress bar to babysit.',
+    title: 'Choose the channel',
+    body: 'Set a destination per project. When the render lands, the file and its prompt are posted there — you don’t have to watch a progress bar.',
   },
 ];
 
@@ -51,7 +46,7 @@ export const HowItWorks = (): FunctionComponent => {
             Three steps, then it runs itself.
           </h2>
         </div>
-        <ul className="grid gap-10 sm:grid-cols-2 sm:gap-10 lg:grid-cols-4">
+        <ul className="grid gap-10 sm:grid-cols-3 sm:gap-10">
           {STEPS.map((step, i) => (
             <li
               key={step.num}

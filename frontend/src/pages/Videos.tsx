@@ -10,7 +10,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState, ErrorState, LoadingRows } from '@/components/common/states';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { apiClient, ApiError } from '@/lib/apiClient';
-import { useAuthStore } from '@/store/authStore';
 import type { VideoJob, VideoJobStatus } from '@/types/domain';
 import type { FunctionComponent } from '@/common/types';
 
@@ -22,19 +21,17 @@ const STATUS_META: Record<VideoJobStatus, { label: string; className: string; ic
 };
 
 export const Videos = (): FunctionComponent => {
-  const { user } = useAuthStore();
   const [jobs, setJobs] = useState<VideoJob[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VideoJob | null>(null);
 
   const load = useCallback(() => {
     setError(null);
-    // Admins oversee every user's jobs in the tenant; members see only their own.
     apiClient
-      .get<VideoJob[]>(user?.isAdmin ? '/api/video-jobs' : '/api/video-jobs?mine=true')
+      .get<VideoJob[]>('/api/video-jobs?mine=true')
       .then(setJobs)
       .catch((e) => setError(e instanceof ApiError ? e.message : 'Failed to load your videos'));
-  }, [user?.isAdmin]);
+  }, []);
 
   useEffect(() => {
     load();
@@ -105,7 +102,7 @@ export const Videos = (): FunctionComponent => {
                       <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{job.prompt}</p>
                     </Link>
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-xs text-muted-foreground">{job.creatorDisplayName} · {new Date(job.createdAt).toLocaleDateString()}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(job.createdAt).toLocaleDateString()}</span>
                       <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteTarget(job)}>
                         <Trash2 className="size-4" />
                       </Button>

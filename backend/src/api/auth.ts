@@ -21,7 +21,7 @@ async function login(req: Request, res: Response): Promise<any> {
     const token = jwt.sign(
       { id: user.id, email: user.email, tenantId: user.tenantId, isAdmin: user.isAdmin === true },
       config.jwtSecret,
-      { expiresIn: '7d' },
+      { expiresIn: '1h' },
     );
 
     const { password: _password, ...safeUser } = user;
@@ -47,7 +47,7 @@ async function signup(req: Request, res: Response): Promise<any> {
 
   try {
     const existingUser = await User.getUserByEmail(email);
-    if (existingUser) return res.status(409).json({ message: 'An account with that email already exists' });
+    if (existingUser) return res.status(409).json({ message: 'An account with this email already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -71,7 +71,7 @@ async function signup(req: Request, res: Response): Promise<any> {
     const token = jwt.sign(
       { id: user.id, email: user.email, tenantId: user.tenantId, isAdmin: user.isAdmin === true },
       config.jwtSecret,
-      { expiresIn: '7d' },
+      { expiresIn: '1h' },
     );
 
     const { password: _password, ...safeUser } = user;

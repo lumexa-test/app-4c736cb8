@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: 'Do I need a workspace admin to install it?',
-    a: 'Only if your workspace requires app approval. In that case the connect flow creates a request your admin can approve in one click.',
+    a: 'Only if your workspace requires app approval. In that case the connect flow generates a request your admin can approve in one click.',
     ids: { summary: 'faq:summary:17', p: 'faq:p:19' },
   },
   {

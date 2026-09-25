@@ -63,6 +63,9 @@ export const AppLayout = (): FunctionComponent => {
 							<a data-edit-id="nav:a:4" href="/#text2video" className={navLinkClass}>
 								Features
 							</a>
+							<a data-edit-id="nav:a:5" href="/#pricing" className={navLinkClass}>
+								Pricing
+							</a>
 							<a data-edit-id="nav:a:6" href="/#faq" className={navLinkClass}>
 								FAQ
 							</a>
@@ -111,10 +114,10 @@ export const AppLayout = (): FunctionComponent => {
 						) : (
 							<>
 								<Button variant="outline" size="sm" className="text-xs font-semibold uppercase tracking-[0.08em]" asChild>
-									<Link to="/login">Log in</Link>
+									<Link to="/login">Sign in</Link>
 								</Button>
 								<Button size="sm" className="text-xs font-semibold uppercase tracking-[0.08em]" asChild>
-									<Link to="/signup">Sign up</Link>
+									<Link to="/signup">Get started</Link>
 								</Button>
 							</>
 						)}
@@ -143,18 +146,21 @@ export const AppLayout = (): FunctionComponent => {
 									<a href="/#text2video" className={navLinkClass} onClick={() => setMobileOpen(false)}>
 										Features
 									</a>
+									<a href="/#pricing" className={navLinkClass} onClick={() => setMobileOpen(false)}>
+										Pricing
+									</a>
 									<a href="/#faq" className={navLinkClass} onClick={() => setMobileOpen(false)}>
 										FAQ
 									</a>
 									<div className="flex flex-col gap-3 pt-2">
 										<Button variant="outline" className="w-full justify-center text-xs font-semibold uppercase tracking-[0.08em]" asChild>
 											<Link to="/login" onClick={() => setMobileOpen(false)}>
-												Log in
+												Sign in
 											</Link>
 										</Button>
 										<Button className="w-full justify-center text-xs font-semibold uppercase tracking-[0.08em]" asChild>
 											<Link to="/signup" onClick={() => setMobileOpen(false)}>
-												Sign up
+												Get started
 											</Link>
 										</Button>
 									</div>
