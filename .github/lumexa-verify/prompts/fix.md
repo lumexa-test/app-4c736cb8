@@ -1,47 +1,51 @@
-You are fixing a deployed web app so it matches its PRD. Browser tests ran
-against the live app and some failed. Fix the APP so they pass.
+You are fixing FUNCTIONAL bugs in a deployed web app. Functional browser tests
+ran against the live app and some failed — each failure is a feature from the
+PRD that does not work. Make those features work.
 
 ## Inputs
 
-- App source — your working directory: `${REPO_DIR}` (a React + Vite
-  `frontend/` and an Express + Prisma `backend/`; read `CLAUDE.md` and
-  `README-agent.md` first for the layout and conventions).
+- App source — your working directory: `${REPO_DIR}` (React + Vite `frontend/`,
+  Express + Prisma `backend/`; read `CLAUDE.md` and `README-agent.md` first).
 - PRD: `${WORK}/PRD.md`
 - Failing tests with errors and screenshot/trace paths: `${WORK}/failures.md`
-- The tests themselves (read-only): `${WORK}/harness/tests/`
+- The tests (read-only): `${WORK}/harness/tests/`
 - Live app for reproducing: `${APP_URL}` (admin login in env `ADMIN_EMAIL` /
-  `ADMIN_PASSWORD`; the `playwright` MCP browser tools are available).
+  `ADMIN_PASSWORD`; `playwright` MCP browser tools available).
 
-## Rules — a fix that breaks one is thrown away
+## How to work
 
-- Change only application source under `frontend/src/` and `backend/src/`
-  (plus `frontend/index.html` if truly needed). Make the smallest change that
-  fixes the root cause; keep the existing design, layout and naming.
-- Do NOT touch: anything under `.github/`, any `package.json` or lockfile (no new
-  dependencies), `backend/prisma/` (no schema or seed changes), Dockerfiles,
-  `buildspec.yml`, `backend/bootstrap.js`, `backend/config/index.ts`,
-  `backend/src/lib/prisma.ts`, `frontend/.env*`, `backend/public/`, `design-kit/`.
-- Do not delete or rename files.
-- Do not edit the tests. If you are CERTAIN a failing test is wrong about the
-  PRD (not the app), append its exact id (the `## ` heading line from
-  `failures.md`, without the `## `) as one line to `${WORK}/invalid-tests.txt`
-  and leave the app alone for it.
-- A failure that needs a schema change or a new dependency cannot be fixed
-  here — skip it and say so.
-- Never touch third-party integration code (payment, email/SMS, OAuth, maps,
-  AI providers, `backend/src/lib/integrationSeam.ts`, anything under an
-  `integrations`/`kits` folder) and never replace a seam's "not configured"
-  error with fake output. A test that only fails on a missing integration is
-  invalid — list it in `invalid-tests.txt`.
-- Nothing that works today may break: before stopping, re-read the tests that
-  were passing and make sure your change cannot affect them.
-- Never run database commands (`prisma db push`, `migrate`, `seed`) and never
-  call the live app's API to change data.
+1. Reproduce each failure in the browser and find the ROOT CAUSE in the code.
+2. Fix the most clear-cut functional bugs first, with the smallest change.
+   **Change at most ${MAX_FIX_FILES} files in total** — a bigger fix is thrown
+   away. Leave the rest for the next round.
+
+## Never change (a fix that does is thrown away)
+
+- What already works. Anything that is not the cause of a failing test stays
+  exactly as it is.
+- Copy and presentation: wording, headings, button/link labels, messages,
+  landing/marketing sections, navigation items, layout, styling.
+- Routes, redirects, and settings/config values (e.g. session length) unless
+  the failure proves a feature is unreachable or broken because of them.
+- `.github/`, any `package.json` or lockfile (no new dependencies),
+  `backend/prisma/` (no schema or seed changes), Dockerfiles, `buildspec.yml`,
+  `backend/bootstrap.js`, `backend/config/index.ts`, `backend/src/lib/prisma.ts`,
+  `backend/src/lib/integrationSeam.ts`, `frontend/.env*`, `backend/public/`,
+  `design-kit/`, and any third-party integration code (payments, email/SMS,
+  OAuth, maps, AI/video providers). Never replace a "not configured" error with
+  fake output.
+- Do not delete or rename files, do not edit the tests, never run database
+  commands and never call the live app's API to change data.
+
+If a failing test is wrong (it checks wording, labels, internals, an integration
+or something out of scope — not a broken feature), append its exact id (the
+`## ` heading in `failures.md`, without `## `) as one line to
+`${WORK}/invalid-tests.txt` and leave the app alone for it. A failure that needs
+a schema change or new dependency cannot be fixed here — skip it.
 
 ## Before you stop
 
 - `cd backend && npm run build` must succeed.
 - `cd frontend && npx vite build --base /` must succeed.
 
-End with a short list: each failing test → fixed (what you changed) / invalid /
-not fixable (why).
+End with: each failing test → fixed (root cause + change) / invalid / skipped (why).

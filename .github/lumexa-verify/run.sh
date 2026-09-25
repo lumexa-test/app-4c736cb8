@@ -29,6 +29,9 @@ CLAUDE_FIX_TIMEOUT="${CLAUDE_FIX_TIMEOUT:-30m}"
 TESTS_TIMEOUT="${TESTS_TIMEOUT:-30m}"
 DEPLOY_WAIT_SECS="${DEPLOY_WAIT_SECS:-1200}"
 HEALTH_WAIT_SECS="${HEALTH_WAIT_SECS:-600}"
+# A fix may touch at most this many source files — the platform refuses more
+# (src/services/e2eVerify/fix.ts MAX_SOURCE_FILES).
+export MAX_FIX_FILES="${MAX_FIX_FILES:-10}"
 
 log() { echo "[lumexa-verify] $*"; }
 
@@ -62,10 +65,33 @@ finish() {
     '{status: $s, reason: $r, summary: $sum, retry: $retry}')"
   touch "$FINISHED_MARK"
   log "finished: $status — $reason (platform answered $HTTP_STATUS)"
-  exit 0
+  write_step_summary "$status" "$reason"
+  # Red tick when the app is left with known broken functions; green otherwise
+  # (passed / fixed, or nothing to do: superseded / skipped).
+  case "$status" in failed|partially_fixed|error) exit 1 ;; *) exit 0 ;; esac
+}
+
+# Result on the GitHub run page.
+write_step_summary() {
+  [ -n "${GITHUB_STEP_SUMMARY:-}" ] || return 0
+  {
+    echo "## Lumexa verification: \`$1\`"
+    echo
+    echo "$2"
+    if [ -f "$WORK/final-summary.json" ]; then
+      echo
+      jq -r '"| Tests | Passed | Failed |\n|---|---|---|\n| \(.total) | \(.passed) | \(.failed) |"' "$WORK/final-summary.json" 2>/dev/null
+      jq -r 'if (.failedIds|length) > 0 then "\n**Still failing**\n" + ([.failedIds[] | "- " + .] | join("\n")) else empty end' "$WORK/final-summary.json" 2>/dev/null
+    fi
+    [ -n "${ROUNDS_LOG:-}" ] && printf '\n**Fix rounds**\n%b\n' "$ROUNDS_LOG"
+    echo
+    echo "Full tests, results, screenshots and Claude logs: the **lumexa-verify** artifact below."
+  } >> "$GITHUB_STEP_SUMMARY"
 }
 
 if [ "${1:-}" = "--report-crash" ]; then
+  # Already reported (a red tick from a failed outcome lands here too) → done.
+  [ -f "$FINISHED_MARK" ] && exit 0
   [ -n "${RUN_TOKEN:-}" ] && [ -n "${API_BASE:-}" ] && finish error "workflow crashed or timed out"
   exit 0
 fi
@@ -116,24 +142,39 @@ cp "$HARNESS_SRC/package.json" "$HARNESS_SRC/playwright.config.ts" "$WORK/harnes
 (cd "$WORK/harness" && npm install --no-audit --no-fund >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1) \
   || finish error "installing Playwright failed"
 touch "$WORK/invalid-tests.txt"
+# Browser-tool snapshots go to $WORK, never into the app repo.
+mkdir -p "$WORK/mcp-output"
+jq --arg out "$WORK/mcp-output" '.mcpServers.playwright.args += ["--output-dir", $out]' \
+  "$HARNESS_SRC/mcp.json" > "$WORK/mcp.json"
 
 # claude_run MODEL TIMEOUT CWD PROMPT_FILE LOG — runs the CLI headless with the
 # prompt on stdin. Auth / usage-limit failures end the run as "skipped".
 claude_run() {
   local model=$1 limit=$2 cwd=$3 prompt=$4 out=$5 rc
   node -e 'const fs=require("fs");const t=fs.readFileSync(process.argv[1],"utf8");
-    fs.writeFileSync(process.argv[2],t.replace(/\$\{(WORK|APP_URL|REPO_DIR|RUN_TAG)\}/g,(_,k)=>process.env[k]||""));' \
+    fs.writeFileSync(process.argv[2],t.replace(/\$\{(WORK|APP_URL|REPO_DIR|RUN_TAG|MAX_FIX_FILES)\}/g,(_,k)=>process.env[k]||""));' \
     "$prompt" "$WORK/prompt.txt"
   # Secrets Claude must never see: the platform run token and the push token.
+  # stream-json → every step Claude takes is echoed live into the job log; the
+  # raw stream is kept in $out for the artifact and the error checks below.
   (cd "$cwd" && env -u RUN_TOKEN -u GH_PUSH_TOKEN -u GH_AUTH_HEADER timeout "$limit" claude -p \
       --model "$model" \
+      --output-format stream-json --verbose \
       --permission-mode dontAsk \
       --allowedTools Bash Read Write Edit Glob Grep mcp__playwright \
       --add-dir "$WORK" "$REPO_DIR" \
-      --mcp-config "$HARNESS_SRC/mcp.json" \
-      < "$WORK/prompt.txt") > "$out" 2>&1
-  rc=$?
-  tail -n 40 "$out"
+      --mcp-config "$WORK/mcp.json" \
+      < "$WORK/prompt.txt") 2>&1 | tee "$out" | jq -R -r --unbuffered '
+        fromjson? |
+        if .type == "assistant" then
+          (.message.content[]? |
+            if .type == "text" then "  💬 " + (.text | gsub("\n"; " ") | .[0:400])
+            elif .type == "tool_use" then "  🔧 " + .name + " " +
+              ((.input.command // .input.file_path // .input.url // .input.pattern // "") | tostring | gsub("\n"; " ") | .[0:200])
+            else empty end)
+        elif .type == "result" then "  ✔ session ended (" + (.subtype // "") + ", " + ((.num_turns // 0) | tostring) + " turns)"
+        else empty end'
+  rc=${PIPESTATUS[0]}
   # 124 = our timeout, not a CLI error. Only the CLI's own final lines are
   # inspected — test output legitimately talks about "authentication".
   if [ $rc -ne 0 ] && [ $rc -ne 124 ]; then
@@ -177,6 +218,15 @@ claude_run "$TEST_MODEL" "$CLAUDE_TESTS_TIMEOUT" "$WORK/harness" "$HARNESS_SRC/p
 if ! ls "$WORK/harness/tests/"*.spec.ts >/dev/null 2>&1; then
   finish error "no tests were written"
 fi
+# Second opinion before anything in the app changes: every failure must be a
+# real functional bug, not a wrong test.
+run_tests draft
+if [ "$(jq -r .failed "$WORK/summary-draft.json")" -gt 0 ]; then
+  log "reviewing $(jq -r .failed "$WORK/summary-draft.json") failing test(s) — are they real bugs? ($TEST_MODEL)"
+  claude_run "$TEST_MODEL" "$CLAUDE_TESTS_TIMEOUT" "$WORK/harness" "$HARNESS_SRC/prompts/review-tests.md" "$WORK/claude-review.log" \
+    || log "review session ended non-zero — using the suite as it is"
+fi
+ls "$WORK/harness/tests/"*.spec.ts >/dev/null 2>&1 || finish error "no tests left after review"
 # Freeze the suite: the fixer may read but never change it.
 cp -r "$WORK/harness/tests" "$WORK/tests.frozen"
 # The app repo was read-only for the test writer — discard anything it touched
@@ -236,6 +286,14 @@ for ROUND in $(seq 1 "$MAX_ROUNDS"); do
     fi
     [ "$ROUND" -eq 1 ] && finish failed "no fix produced for $INITIAL_FAILED failing test(s)"
     finish partially_fixed "no further fix produced"
+  fi
+
+  CHANGED=$(echo "$GUARD" | jq -r .sourceChanged)
+  if [ "$CHANGED" -gt "$MAX_FIX_FILES" ]; then
+    git -C "$REPO_DIR" reset -q --hard "$CUR_SHA" && git -C "$REPO_DIR" clean -qfd -e node_modules
+    ROUNDS_LOG="${ROUNDS_LOG}- round $ROUND: fix touched $CHANGED files (max $MAX_FIX_FILES) — discarded\n"
+    [ "$ROUND" -eq 1 ] && finish failed "the fix was too broad ($CHANGED files, max $MAX_FIX_FILES) — discarded, nothing deployed"
+    finish partially_fixed "round $ROUND fix too broad ($CHANGED files) — discarded"
   fi
 
   if ! build_app; then
@@ -312,11 +370,13 @@ for ROUND in $(seq 1 "$MAX_ROUNDS"); do
     '[$n[0].failedIds[] | select(. as $id | $p[0].passedIds | index($id))] | length')
   if [ "$(jq -r .reportOk "$WORK/summary-r$ROUND.json")" != true ] || [ "$NEWLY_BROKEN" -gt 0 ] || [ "$NOW_FAILED" -gt "$PREV_FAILED" ]; then
     log "round $ROUND made things worse ($NEWLY_BROKEN newly broken) — rolling back"
+    ROUNDS_LOG="${ROUNDS_LOG}- round $ROUND: ${FIX_SHA:0:7} broke $NEWLY_BROKEN passing test(s) — rolled back\n"
     api POST /v1/e2e-verify/rollback "$(jq -cn --argjson r "$ROUND" '{round: $r, reason: "regression"}')"
     cp "$WORK/summary-$PREV_LABEL.json" "$WORK/tmp.json" && jq -c '{total, passed, failed, flaky, excludedAsInvalid, failedIds}' "$WORK/tmp.json" > "$WORK/final-summary.json"
     [ "$ROUND" -eq 1 ] && finish failed "the fix broke passing tests (rolled back)"
     finish partially_fixed "round $ROUND broke passing tests (rolled back to round $((ROUND - 1)))"
   fi
+  ROUNDS_LOG="${ROUNDS_LOG}- round $ROUND: ${FIX_SHA:0:7} deployed — $PREV_FAILED → $NOW_FAILED failing\n"
   if [ "$NOW_FAILED" -eq 0 ]; then
     finish fixed "all PRD tests pass after $ROUND round(s)"
   fi

@@ -23,6 +23,7 @@ const PROTECTED = [
   /^backend\/prisma\//,
   /^frontend\/\.env/,
   /^design-kit\//,
+  /^\.playwright-mcp\//,
 ];
 const BUILT_OUTPUT = /^backend\/public\//;
 
