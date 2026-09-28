@@ -12,9 +12,8 @@ For every failing test, reproduce it in the browser and decide:
   works, or it checks something that is not functional (wording, labels, copy,
   exact routes, HTTP codes, internals, third-party integrations, out-of-scope
   items) → fix the test, or delete that assertion/test. A test that fails only
-  because a page lives at a different URL or has a different name than the PRD
-  says (e.g. PRD `/login`, app `/signin`) is a wrong test — point it at the
-  real page that does that job.
+  because a page, feature or field has a different URL or name than the PRD
+  says is a wrong test — point it at the real one that does that job.
 - The feature genuinely does not work as the PRD requires → leave it failing.
 
 Do not weaken a test that catches a real functional bug. Do not change the app.

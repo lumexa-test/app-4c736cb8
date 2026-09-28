@@ -68,20 +68,24 @@ are integrations (not tested). Then write one test per journey.
 
 ## Pages are matched by PURPOSE, not by URL or name
 
-The PRD's page names and paths are descriptions, not contracts. "Login page at
-/login" is satisfied by a sign-in page at `/signin`, `/auth` or a modal — as
-long as a user can find it and it does its job. So:
+This applies to EVERY page, feature and field in the app. The PRD's page names
+and paths are descriptions, not contracts — any page that does the job counts,
+whatever its URL, title or layout (a page, tab, modal or section). Examples:
+PRD `/dashboard` ↔ app `/home` or `/overview`; PRD "Reports" ↔ app "Analytics";
+PRD `/settings` ↔ app `/account/preferences`; PRD "Orders page" ↔ an "Orders"
+tab inside the account page. So:
 - While exploring, map each PRD page to the real page that serves that purpose
-  (write the mapping into `journeys.md`, e.g. `PRD /login → /signin`).
+  (write the mapping into `journeys.md`, one line per PRD page:
+  `PRD <name/path> → <real page>`).
 - In tests, reach pages the way a user does — click the link/button in the
   navigation or on the page — and use a real URL only when there is no link to
   it (e.g. a detail page opened by id). Never `goto()` a path just because the
   PRD names it.
 - Only when NO page anywhere in the app does that job is it a failure
-  ("the PRD requires a sign-in page and none exists").
+  (the PRD requires it, and nothing in the app lets a user do it).
 
-The same applies to feature and field names: "Projects" vs "Workspaces",
-"Title" vs "Name" — same purpose = same thing.
+The same applies to feature, button and field names ("Projects" ↔
+"Workspaces", "Title" ↔ "Name", "Submit" ↔ "Save") — same purpose = same thing.
 
 ## Writing the tests
 
