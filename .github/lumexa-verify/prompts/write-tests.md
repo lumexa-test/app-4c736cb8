@@ -66,6 +66,23 @@ Write `${WORK}/journeys.md`: every role, and for each role every functional
 requirement from the PRD as a journey with its expected RESULT. Mark which ones
 are integrations (not tested). Then write one test per journey.
 
+## Pages are matched by PURPOSE, not by URL or name
+
+The PRD's page names and paths are descriptions, not contracts. "Login page at
+/login" is satisfied by a sign-in page at `/signin`, `/auth` or a modal — as
+long as a user can find it and it does its job. So:
+- While exploring, map each PRD page to the real page that serves that purpose
+  (write the mapping into `journeys.md`, e.g. `PRD /login → /signin`).
+- In tests, reach pages the way a user does — click the link/button in the
+  navigation or on the page — and use a real URL only when there is no link to
+  it (e.g. a detail page opened by id). Never `goto()` a path just because the
+  PRD names it.
+- Only when NO page anywhere in the app does that job is it a failure
+  ("the PRD requires a sign-in page and none exists").
+
+The same applies to feature and field names: "Projects" vs "Workspaces",
+"Title" vs "Name" — same purpose = same thing.
+
 ## Writing the tests
 
 Playwright tests in TypeScript under `${WORK}/harness/tests/`, one spec file
