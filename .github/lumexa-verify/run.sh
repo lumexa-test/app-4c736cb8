@@ -37,10 +37,13 @@ log() { echo "[lumexa-verify] $*"; }
 
 # ---------------------------------------------------------------- platform API
 # api METHOD PATH [JSON]  → body in $WORK/resp.json, status in $HTTP_STATUS.
-# Retries transport errors and 5xx; 4xx are answers, not failures.
+# Retries (for ~10 min) transport errors, 5xx, and 404s that did not come from
+# the platform — our API always answers JSON, so a non-JSON 404 is a proxy or
+# tunnel in between (e.g. an offline ngrok endpoint). Every endpoint is safe to
+# repeat (/fix is idempotent per round + sha).
 api() {
   local method=$1 path=$2 data=${3:-} attempt
-  for attempt in 1 2 3 4; do
+  for attempt in 1 2 3 4 5 6 7 8 9 10; do
     if [ -n "$data" ]; then
       HTTP_STATUS=$(curl -sS -o "$WORK/resp.json" -w '%{http_code}' -X "$method" \
         -H "Authorization: Bearer $RUN_TOKEN" -H 'Content-Type: application/json' \
@@ -49,10 +52,30 @@ api() {
       HTTP_STATUS=$(curl -sS -o "$WORK/resp.json" -w '%{http_code}' -X "$method" \
         -H "Authorization: Bearer $RUN_TOKEN" --max-time 180 "$API_BASE$path" 2>/dev/null) || HTTP_STATUS=000
     fi
-    case "$HTTP_STATUS" in 000|5??) sleep $((attempt * 15)) ;; *) return 0 ;; esac
+    case "$HTTP_STATUS" in
+      000|5??) ;;
+      404) jq -e 'type == "object"' "$WORK/resp.json" >/dev/null 2>&1 && return 0 ;;
+      *) return 0 ;;
+    esac
+    log "platform unreachable (HTTP $HTTP_STATUS) — retry $attempt/10"
+    sleep $((attempt * 12))
   done
   return 0
 }
+
+# Secrets never leave the runner: the GitHub log masks them, but the uploaded
+# artifact (Claude's raw logs, test output) would not — blank them on exit.
+scrub_secrets() {
+  local secret
+  for secret in "${ADMIN_PASSWORD:-}" "${RUN_TOKEN:-}" "${CLAUDE_CODE_OAUTH_TOKEN:-}" "${GH_PUSH_TOKEN:-}"; do
+    [ ${#secret} -ge 4 ] || continue
+    grep -rlF -- "$secret" "$WORK" --exclude-dir=node_modules 2>/dev/null | while IFS= read -r f; do
+      SECRET="$secret" perl -0pi -e 's/\Q$ENV{SECRET}\E/***/g' "$f" 2>/dev/null || true
+    done
+  done
+  rm -f "$WORK/resp.json" "$WORK/prompt.txt"
+}
+trap scrub_secrets EXIT
 
 # finish STATUS REASON [retry] — report the outcome once, then exit 0 (the
 # outcome is the result; a red workflow would only add noise). `retry` marks a

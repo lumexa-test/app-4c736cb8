@@ -93,3 +93,6 @@ Then go through EVERY failure and decide honestly:
 
 Repeat until every remaining failure is a genuine functional bug. Only then
 stop, with a short list of those bugs.
+
+Never echo, print, log or write the admin password or any token anywhere (no
+`echo $ADMIN_PASSWORD`, no writing it to files) — read it from `process.env` only.

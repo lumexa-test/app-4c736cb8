@@ -19,3 +19,6 @@ When done, run the whole suite in the FOREGROUND and wait for it to finish:
 `cd ${WORK}/harness && npx playwright test`
 Never run it in the background and never stop while it is running. End with the
 list of remaining failures and, for each, the functional bug it proves.
+
+Never echo, print, log or write the admin password or any token anywhere (no
+`echo $ADMIN_PASSWORD`, no writing it to files) — read it from `process.env` only.
