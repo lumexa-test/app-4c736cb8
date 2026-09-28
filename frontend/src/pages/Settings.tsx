@@ -1,13 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
-import { KeyRound, CheckCircle2, MessageCircle, MapPin } from 'lucide-react';
+import { KeyRound, CheckCircle2 } from 'lucide-react';
 import { PageContainer } from '@/components/AppLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ErrorState, LoadingState } from '@/components/common/states';
-import { SlackConnectButton } from '@/components/integrations/SlackConnectButton';
-import { SlackChannelPicker } from '@/components/integrations/SlackChannelPicker';
-import { LocationWeather } from '@/components/common/LocationWeather';
 import { apiClient, ApiError } from '@/lib/apiClient';
 import type { TenantSettingsView } from '@/types/domain';
 import type { FunctionComponent } from '@/common/types';
@@ -35,18 +32,7 @@ export const Settings = (): FunctionComponent => {
 
         <Card className="shadow-card">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><MessageCircle className="size-5" /> Slack connection</CardTitle>
-            <CardDescription>Connect the Slack workspace and pick the channel where video-completion alerts are posted.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <SlackConnectButton returnTo="/settings" />
-            <SlackChannelPicker />
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><KeyRound className="size-5" /> Video generation key</CardTitle>
+            <CardTitle className="flex items-center gap-2"><KeyRound className="size-5" /> Google Veo</CardTitle>
             <CardDescription>Video generation is configured via the platform environment — set GEMINI_API_KEY in the platform dashboard to enable it.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -57,16 +43,6 @@ export const Settings = (): FunctionComponent => {
             ) : (
               <Badge className="bg-destructive/10 text-destructive">Not active — GEMINI_API_KEY not set</Badge>
             )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><MapPin className="size-5" /> Location &amp; weather</CardTitle>
-            <CardDescription>Live location and weather appear in the top navigation on every authenticated page. Current status:</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <LocationWeather />
           </CardContent>
         </Card>
       </div>
