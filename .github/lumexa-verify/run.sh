@@ -254,7 +254,34 @@ run_tests() {
 
 wait_healthy "$HEALTH_WAIT_SECS" || finish skipped "deployed app not healthy yet at $APP_URL" true
 
+# Manual test runs (--reuse-tests): take the suite from this repo's latest run
+# artifact instead of writing one — skips ~40 min. Falls back to writing.
+reuse_previous_tests() {
+  local api="${GITHUB_API_URL:-https://api.github.com}/repos/${GITHUB_REPOSITORY:-}" id
+  [ -n "${GITHUB_REPOSITORY:-}" ] || return 1
+  curl -fsS -H "Authorization: Bearer $GH_PUSH_TOKEN" -H "Accept: application/vnd.github+json" \
+    "$api/actions/artifacts?name=lumexa-verify&per_page=20" -o "$WORK/artifacts.json" 2>/dev/null || return 1
+  for id in $(jq -r '.artifacts | map(select(.expired | not)) | sort_by(.created_at) | reverse | .[].id' "$WORK/artifacts.json"); do
+    rm -rf "$WORK/prev" && mkdir -p "$WORK/prev"
+    curl -fsSL -H "Authorization: Bearer $GH_PUSH_TOKEN" "$api/actions/artifacts/$id/zip" -o "$WORK/prev.zip" 2>/dev/null || continue
+    (cd "$WORK/prev" && unzip -q ../prev.zip) 2>/dev/null || continue
+    ls "$WORK/prev/tests.frozen/"*.spec.ts >/dev/null 2>&1 || continue
+    rm -rf "$WORK/harness/tests" && cp -r "$WORK/prev/tests.frozen" "$WORK/harness/tests"
+    [ -f "$WORK/prev/journeys.md" ] && cp "$WORK/prev/journeys.md" "$WORK/journeys.md"
+    [ -f "$WORK/prev/invalid-tests.txt" ] && cp "$WORK/prev/invalid-tests.txt" "$WORK/invalid-tests.txt"
+    log "reusing the test suite from artifact $id ($(ls "$WORK/harness/tests/"*.spec.ts | wc -l) spec files)"
+    return 0
+  done
+  return 1
+}
+
+REUSED=""
+if [ "${REUSE_TESTS:-false}" = true ]; then
+  reuse_previous_tests && REUSED=1 || log "no previous test suite found — writing a new one"
+fi
+
 # ------------------------------------------------------------- write the tests
+if [ -z "$REUSED" ]; then
 log "writing tests from the PRD ($TEST_MODEL)"
 # Black box: the test writer and reviewer get the PRD and the live app only —
 # no app source (it would bias tests toward what the code already does).
@@ -273,6 +300,7 @@ if [ "$(jq -r .failed "$WORK/summary-draft.json")" -gt 0 ]; then
     || log "review session ended non-zero — using the suite as it is"
 fi
 ls "$WORK/harness/tests/"*.spec.ts >/dev/null 2>&1 || finish error "no tests left after review"
+fi
 # Freeze the suite: the fixer may read but never change it.
 cp -r "$WORK/harness/tests" "$WORK/tests.frozen"
 unlock_repo

@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write # push the fix branch only; the platform moves main
+  actions: read # --reuse-tests: download the previous run's test suite
 
 concurrency:
   group: lumexa-verify
@@ -28,6 +29,7 @@ jobs:
       RUN_ID: ${{ github.event.client_payload.run_id }}
       RUN_TOKEN: ${{ github.event.client_payload.token }}
       API_BASE: ${{ github.event.client_payload.api_base }}
+      REUSE_TESTS: ${{ github.event.client_payload.reuse_tests }}
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       GH_PUSH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TEST_MODEL: ${{ vars.LUMEXA_VERIFY_TEST_MODEL || 'sonnet' }}
