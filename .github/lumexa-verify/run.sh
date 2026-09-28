@@ -124,6 +124,7 @@ for v in RUN_ID RUN_TOKEN API_BASE; do
   if [ -z "${!v:-}" ]; then log "missing $v — not a platform dispatch, nothing to do"; exit 0; fi
 done
 RUN_TAG="lmxv-${RUN_ID:0:8}"
+ROUNDS_LOG=""
 
 # -------------------------------------------------------------------- context
 api GET /v1/e2e-verify/context
@@ -137,6 +138,11 @@ ADMIN_PASSWORD=$(jq -r .admin_password "$WORK/resp.json")
 BASE_SHA=$(jq -r .base_sha "$WORK/resp.json")
 MAX_ROUNDS=$(jq -r .max_rounds "$WORK/resp.json")
 jq -r .prd "$WORK/resp.json" > "$WORK/PRD.md"
+# Build-time frontend settings the platform bakes into the live bundle (not in
+# the repo — .env.local is excluded from the mirror). Missing = refuse to build.
+jq -e '.frontend_env | type == "object"' "$WORK/resp.json" >/dev/null 2>&1 \
+  || { log "platform sent no frontend_env — update the platform"; FRONTEND_ENV_MISSING=1; }
+jq -r '(.frontend_env // {}) | to_entries[] | "\(.key)=\(.value)"' "$WORK/resp.json" > "$WORK/frontend.env.local"
 echo "::add-mask::$ADMIN_PASSWORD"
 export APP_URL ADMIN_EMAIL ADMIN_PASSWORD RUN_TAG WORK REPO_DIR
 
@@ -290,8 +296,18 @@ install_deps() {
 }
 
 build_app() {
+  [ -z "${FRONTEND_ENV_MISSING:-}" ] || { echo "no frontend_env from the platform" >"$WORK/build.log"; return 1; }
+  # Same frontend settings as the platform packager's build (see resp frontend_env).
+  cp "$WORK/frontend.env.local" "$REPO_DIR/frontend/.env.local"
   (cd "$REPO_DIR/backend" && npm run build) >"$WORK/build.log" 2>&1 \
-    && (cd "$REPO_DIR/frontend" && npx vite build --base /) >>"$WORK/build.log" 2>&1
+    && (cd "$REPO_DIR/frontend" && npx vite build --base /) >>"$WORK/build.log" 2>&1 \
+    || return 1
+  # Never ship a bundle that talks to a dev server instead of its own backend.
+  if grep -rqE 'https?://(localhost|127\.0\.0\.1)(:[0-9]+)?' "$REPO_DIR/frontend/dist/assets" 2>/dev/null \
+     && ! grep -rqE 'https?://(localhost|127\.0\.0\.1)(:[0-9]+)?' "$REPO_DIR/backend/public/assets" 2>/dev/null; then
+    echo "built bundle points at localhost — frontend env is wrong" >>"$WORK/build.log"
+    return 1
+  fi
 }
 
 restore_tests() { rm -rf "$WORK/harness/tests" && cp -r "$WORK/tests.frozen" "$WORK/harness/tests"; }
