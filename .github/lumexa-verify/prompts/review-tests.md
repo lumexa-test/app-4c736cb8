@@ -1,7 +1,8 @@
 You wrote functional browser tests for a live web app (tests in
-`${WORK}/harness/tests/`, PRD in `${WORK}/PRD.md`, app source read-only in
-`${REPO_DIR}`, live app at `${APP_URL}`, admin login in env `ADMIN_EMAIL` /
-`ADMIN_PASSWORD`, `playwright` MCP browser tools available).
+`${WORK}/harness/tests/`, PRD in `${WORK}/PRD.md`, live app at `${APP_URL}`,
+admin login in env `ADMIN_EMAIL` / `ADMIN_PASSWORD`, `playwright` MCP browser
+tools available). This is black-box testing: you have no app source code —
+judge only by the PRD and what the live app does in the browser.
 
 The latest run's failures are in `${WORK}/failures.md`. Before anyone changes
 the app because of them, each failure must be a REAL functional bug.

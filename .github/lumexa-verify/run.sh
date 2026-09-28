@@ -75,7 +75,8 @@ scrub_secrets() {
   done
   rm -f "$WORK/resp.json" "$WORK/prompt.txt"
 }
-trap scrub_secrets EXIT
+on_exit() { unlock_repo 2>/dev/null || chmod 755 "$REPO_DIR" 2>/dev/null; scrub_secrets; }
+trap on_exit EXIT
 
 # finish STATUS REASON [retry] — report the outcome once, then exit 0 (the
 # outcome is the result; a red workflow would only add noise). `retry` marks a
@@ -157,6 +158,16 @@ git -C "$REPO_DIR" checkout -q --detach "$BASE_SHA" || finish error "checkout of
 git -C "$REPO_DIR" config user.name "Lumexa"
 git -C "$REPO_DIR" config user.email "gennie@lumexaai.com"
 
+# Run the harness from a copy outside the repo, so the checkout can be locked
+# while tests are written (see lock_repo).
+rm -rf "$WORK/harness-src" && cp -r "$HARNESS_SRC" "$WORK/harness-src" && HARNESS_SRC="$WORK/harness-src"
+
+# Black-box testing: no read access to the app's source while tests are written
+# and reviewed — the PRD and the live app are the only sources of truth. Only
+# the fixer, after all testing, gets the code.
+lock_repo() { chmod 000 "$REPO_DIR"; }
+unlock_repo() { chmod 755 "$REPO_DIR" 2>/dev/null || true; }
+
 # ---------------------------------------------------------------------- tools
 log "installing Claude Code + Playwright"
 npm install -g @anthropic-ai/claude-code >/dev/null 2>&1 || finish error "installing Claude Code failed"
@@ -170,10 +181,13 @@ mkdir -p "$WORK/mcp-output"
 jq --arg out "$WORK/mcp-output" '.mcpServers.playwright.args += ["--output-dir", $out]' \
   "$HARNESS_SRC/mcp.json" > "$WORK/mcp.json"
 
-# claude_run MODEL TIMEOUT CWD PROMPT_FILE LOG — runs the CLI headless with the
-# prompt on stdin. Auth / usage-limit failures end the run as "skipped".
+# claude_run MODEL TIMEOUT CWD PROMPT_FILE LOG [DIR...] — runs the CLI headless
+# with the prompt on stdin; DIRs are the only extra directories it may use.
+# Auth / usage-limit failures end the run as "skipped".
 claude_run() {
   local model=$1 limit=$2 cwd=$3 prompt=$4 out=$5 rc
+  shift 5
+  local dirs=("$WORK" "$@")
   node -e 'const fs=require("fs");const t=fs.readFileSync(process.argv[1],"utf8");
     fs.writeFileSync(process.argv[2],t.replace(/\$\{(WORK|APP_URL|REPO_DIR|RUN_TAG|MAX_FIX_FILES)\}/g,(_,k)=>process.env[k]||""));' \
     "$prompt" "$WORK/prompt.txt"
@@ -185,7 +199,7 @@ claude_run() {
       --output-format stream-json --verbose \
       --permission-mode dontAsk \
       --allowedTools Bash Read Write Edit Glob Grep mcp__playwright \
-      --add-dir "$WORK" "$REPO_DIR" \
+      --add-dir "${dirs[@]}" \
       --mcp-config "$WORK/mcp.json" \
       < "$WORK/prompt.txt") 2>&1 | tee "$out" | jq -R -r --unbuffered '
         fromjson? |
@@ -236,6 +250,9 @@ wait_healthy "$HEALTH_WAIT_SECS" || finish skipped "deployed app not healthy yet
 
 # ------------------------------------------------------------- write the tests
 log "writing tests from the PRD ($TEST_MODEL)"
+# Black box: the test writer and reviewer get the PRD and the live app only —
+# no app source (it would bias tests toward what the code already does).
+lock_repo
 claude_run "$TEST_MODEL" "$CLAUDE_TESTS_TIMEOUT" "$WORK/harness" "$HARNESS_SRC/prompts/write-tests.md" "$WORK/claude-tests.log" \
   || log "test-writing session ended non-zero — using the tests it wrote"
 if ! ls "$WORK/harness/tests/"*.spec.ts >/dev/null 2>&1; then
@@ -252,6 +269,7 @@ fi
 ls "$WORK/harness/tests/"*.spec.ts >/dev/null 2>&1 || finish error "no tests left after review"
 # Freeze the suite: the fixer may read but never change it.
 cp -r "$WORK/harness/tests" "$WORK/tests.frozen"
+unlock_repo
 # The app repo was read-only for the test writer — discard anything it touched
 # so it cannot be mistaken for round 1's fix.
 git -C "$REPO_DIR" reset -q --hard "$BASE_SHA" && git -C "$REPO_DIR" clean -qfd
@@ -290,7 +308,7 @@ CUR_SHA="$BASE_SHA"
 PREV_LABEL=r0
 for ROUND in $(seq 1 "$MAX_ROUNDS"); do
   log "round $ROUND: fixing ($FIX_MODEL)"
-  claude_run "$FIX_MODEL" "$CLAUDE_FIX_TIMEOUT" "$REPO_DIR" "$HARNESS_SRC/prompts/fix.md" "$WORK/claude-fix-$ROUND.log" \
+  claude_run "$FIX_MODEL" "$CLAUDE_FIX_TIMEOUT" "$REPO_DIR" "$HARNESS_SRC/prompts/fix.md" "$WORK/claude-fix-$ROUND.log" "$REPO_DIR" \
     || log "fix session ended non-zero — checking what it changed"
   restore_tests
   reset_lockfiles
@@ -321,7 +339,7 @@ for ROUND in $(seq 1 "$MAX_ROUNDS"); do
 
   if ! build_app; then
     log "build failed — one repair attempt"
-    claude_run "$FIX_MODEL" 15m "$REPO_DIR" "$HARNESS_SRC/prompts/fix-build.md" "$WORK/claude-build-$ROUND.log" || true
+    claude_run "$FIX_MODEL" 15m "$REPO_DIR" "$HARNESS_SRC/prompts/fix-build.md" "$WORK/claude-build-$ROUND.log" "$REPO_DIR" || true
     restore_tests
     reset_lockfiles
     (cd "$REPO_DIR" && node "$HARNESS_SRC/lib/guard-diff.mjs") >/dev/null || true
