@@ -12,10 +12,7 @@ import { apiClient, ApiError } from '@/lib/apiClient';
 import type { WorkspaceMessage } from '@/types/domain';
 import type { FunctionComponent } from '@/common/types';
 
-// Workspace — a Slack-style shared feed for the whole tenant. Messages are
-// mirrored here AND (per the PRD) would post to the connected Slack channel;
-// since Slack is "planned for a future version", bot-authored rows simulate
-// what that channel post would say.
+// Workspace — a shared feed for the whole tenant.
 export const Workspace = (): FunctionComponent => {
   const [messages, setMessages] = useState<WorkspaceMessage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +55,7 @@ export const Workspace = (): FunctionComponent => {
   return (
     <PageContainer>
       <div className="space-y-6">
-        <PageHeader title="Workspace" description="The shared feed for your team — posts here also go to your connected Slack channel." />
+        <PageHeader title="Workspace" description="The shared feed for your team." />
 
         <Card className="shadow-card">
           <CardContent className="flex flex-col gap-4 pt-6">

@@ -9,10 +9,8 @@ import { Dashboard } from '@/pages/Dashboard';
 import { Workspace } from '@/pages/Workspace';
 import { Messages } from '@/pages/Messages';
 import { Settings } from '@/pages/Settings';
-import { Account } from '@/pages/Account';
 import { AdminRoute } from '@/components/AdminRoute';
 import type { FunctionComponent } from '@/common/types';
-import { SlackConnected } from '@/pages/SlackConnected';
 
 // Declarative route table — all pages are registered here.
 // EVERY page renders inside <AppLayout> (the shared navbar + footer shell) —
@@ -28,7 +26,6 @@ const App = (): FunctionComponent => {
 					<Route path="/" element={<Landing />} />
 					<Route path="/login" element={<Login />} />
 					<Route path="/signup" element={<Signup />} />
-					<Route path="/slack/connected" element={<SlackConnected />} />
 					{/* ── DOMAIN ROUTES GO HERE (public) ── */}
 
 					{/* Protected routes — redirect to /login when unauthenticated */}
@@ -37,7 +34,6 @@ const App = (): FunctionComponent => {
 						{/* ── DOMAIN ROUTES GO HERE (protected) ── */}
 						<Route path="/workspace" element={<Workspace />} />
 						<Route path="/messages" element={<Messages />} />
-						<Route path="/account" element={<Account />} />
 						<Route element={<AdminRoute />}>
 							<Route path="/settings" element={<Settings />} />
 						</Route>

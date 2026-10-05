@@ -82,9 +82,6 @@ export const AppLayout = (): FunctionComponent => {
 							<NavLink to="/messages" className={navLinkClassActive}>
 								Messages
 							</NavLink>
-							<NavLink to="/account" className={navLinkClassActive}>
-								Account
-							</NavLink>
 							{user.isAdmin && (
 								<NavLink to="/settings" className={navLinkClassActive}>
 									Settings
@@ -163,9 +160,6 @@ export const AppLayout = (): FunctionComponent => {
 									</NavLink>
 									<NavLink to="/messages" className={navLinkClass} onClick={() => setMobileOpen(false)}>
 										Messages
-									</NavLink>
-									<NavLink to="/account" className={navLinkClass} onClick={() => setMobileOpen(false)}>
-										Account
 									</NavLink>
 									{user.isAdmin && (
 										<NavLink to="/settings" className={navLinkClass} onClick={() => setMobileOpen(false)}>

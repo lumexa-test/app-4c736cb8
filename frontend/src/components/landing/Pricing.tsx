@@ -15,7 +15,7 @@ export const Pricing = (): FunctionComponent => {
             Pay for renders, not seats.
           </h2>
           <p data-edit-id="pricing:p:4" className="text-muted-foreground">
-            Every plan includes the Slack connection, channel notifications and unlimited teammates in the workspace.
+            Every plan includes unlimited teammates in the workspace.
           </p>
         </div>
 
@@ -31,7 +31,6 @@ export const Pricing = (): FunctionComponent => {
             <ul className="grid gap-2 text-muted-foreground">
               <li data-edit-id="pricing:li:9">5 renders per month</li>
               <li data-edit-id="pricing:li:10">720p, up to 5 seconds</li>
-              <li data-edit-id="pricing:li:11">One notification channel</li>
               <li data-edit-id="pricing:li:12">Text to video</li>
             </ul>
             <Button data-edit-id="pricing:a:13" asChild variant="outline" className="w-full text-xs font-semibold uppercase tracking-[0.08em]">
@@ -53,7 +52,6 @@ export const Pricing = (): FunctionComponent => {
             <ul className="grid gap-2 text-muted-foreground">
               <li data-edit-id="pricing:li:17">60 renders per month</li>
               <li data-edit-id="pricing:li:18">1080p, up to 12 seconds</li>
-              <li data-edit-id="pricing:li:19">Three notification channels</li>
               <li data-edit-id="pricing:li:20">Text and image to video</li>
             </ul>
             <Button data-edit-id="pricing:a:21" asChild className="w-full text-xs font-semibold uppercase tracking-[0.08em]">
@@ -72,7 +70,6 @@ export const Pricing = (): FunctionComponent => {
             <ul className="grid gap-2 text-muted-foreground">
               <li data-edit-id="pricing:li:25">300 renders per month</li>
               <li data-edit-id="pricing:li:26">4K upscale, priority queue</li>
-              <li data-edit-id="pricing:li:27">Unlimited channels, private included</li>
               <li data-edit-id="pricing:li:28">90-day render archive</li>
             </ul>
             <Button data-edit-id="pricing:a:29" asChild variant="outline" className="w-full text-xs font-semibold uppercase tracking-[0.08em]">
