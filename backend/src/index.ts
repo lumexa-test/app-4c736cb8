@@ -5,16 +5,13 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
-import videoJobRoutes from './routes/videoJobs';
 import messageRoutes from './routes/messages';
 import directMessageRoutes from './routes/directMessages';
-import settingsRoutes from './routes/settings';
 import userRoutes from './routes/users';
 import uploadRoutes from './custom/uploads';
 import config from '../config';
 import { prisma } from './lib/prisma';
 import slackRouter from './custom/integrations/slack';
-import videoRouter from './custom/integrations/googleai';
 
 const app = express();
 
@@ -48,10 +45,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 
 // ── DOMAIN ROUTES GO HERE ──────────────────────────────────────────────
-app.use('/api/video-jobs', videoJobRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/direct-messages', directMessageRoutes);
-app.use('/api/settings', settingsRoutes);
 app.use('/api/users', userRoutes);
 // ───────────────────────────────────────────────────────────────────────
 
@@ -60,7 +55,6 @@ app.use('/api/users', userRoutes);
 // Example: app.use('/api/search', searchRoutes);
 app.use('/api/uploads', uploadRoutes); // image uploads → platform proxy (see "Image uploads" in backend/CLAUDE.md; never touch S3/AWS directly)
 app.use('/api/slack', slackRouter);
-app.use('/api/video', videoRouter);
 
 // Serve frontend static files (production: vite build output copied to public/)
 const publicDir = join(__dirname, '..', '..', 'public');

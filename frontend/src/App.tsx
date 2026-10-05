@@ -6,9 +6,6 @@ import { Landing } from '@/pages/Landing';
 import { Login } from '@/pages/Login';
 import { Signup } from '@/pages/Signup';
 import { Dashboard } from '@/pages/Dashboard';
-import { Studio } from '@/pages/Studio';
-import { Videos } from '@/pages/Videos';
-import { VideoDetail } from '@/pages/VideoDetail';
 import { Workspace } from '@/pages/Workspace';
 import { Messages } from '@/pages/Messages';
 import { Settings } from '@/pages/Settings';
@@ -38,9 +35,6 @@ const App = (): FunctionComponent => {
 					<Route element={<ProtectedRoute />}>
 						<Route path="/dashboard" element={<Dashboard />} />
 						{/* ── DOMAIN ROUTES GO HERE (protected) ── */}
-						<Route path="/studio" element={<Studio />} />
-						<Route path="/videos" element={<Videos />} />
-						<Route path="/videos/:id" element={<VideoDetail />} />
 						<Route path="/workspace" element={<Workspace />} />
 						<Route path="/messages" element={<Messages />} />
 						<Route path="/account" element={<Account />} />

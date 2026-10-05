@@ -14,8 +14,8 @@ import type { FunctionComponent } from '@/common/types';
 
 // Workspace — a Slack-style shared feed for the whole tenant. Messages are
 // mirrored here AND (per the PRD) would post to the connected Slack channel;
-// since Slack is "planned for a future version", the bot-authored rows
-// (video-completion alerts) simulate what that channel post would say.
+// since Slack is "planned for a future version", bot-authored rows simulate
+// what that channel post would say.
 export const Workspace = (): FunctionComponent => {
   const [messages, setMessages] = useState<WorkspaceMessage[] | null>(null);
   const [error, setError] = useState<string | null>(null);

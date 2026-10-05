@@ -63,17 +63,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lumexa-verify
-          # Debug window only — GitHub deletes it automatically after a day, so
-          # finished runs leave no storage behind.
-          retention-days: 1
+          retention-days: 14
           if-no-files-found: ignore
           path: |
             ${{ runner.temp }}/lumexa-verify
             !${{ runner.temp }}/lumexa-verify/harness/node_modules
-            !${{ runner.temp }}/lumexa-verify/harness-src
-            !${{ runner.temp }}/lumexa-verify/mcp-output
-            !${{ runner.temp }}/lumexa-verify/prev
-            !${{ runner.temp }}/lumexa-verify/prev.zip
-            !${{ runner.temp }}/lumexa-verify/artifacts.json
             !${{ runner.temp }}/lumexa-verify/resp.json
             !${{ runner.temp }}/lumexa-verify/prompt.txt

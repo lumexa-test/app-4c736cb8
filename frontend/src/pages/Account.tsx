@@ -17,7 +17,7 @@ export const Account = (): FunctionComponent => {
               <MessageCircle className="size-5" /> Slack
             </CardTitle>
             <CardDescription>
-              Connect your Slack workspace to receive video completion alerts in your chosen channel or DM.
+              Connect your Slack workspace to send and receive messages in your chosen channel or DM.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

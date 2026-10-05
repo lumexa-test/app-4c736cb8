@@ -62,8 +62,7 @@ async function seedDomainData(tenantId: string, adminId: number): Promise<void> 
   }
   const [sarah, marcus, priya, diego, lena] = members;
 
-  // Tenant settings — Slack connected with an alert channel, Veo key
-  // configured, so the demo tenant is immediately past the "cost gate".
+  // Tenant settings — Slack connected with an alert channel.
   await prisma.tenantSettings.upsert({
     where: { tenantId },
     update: {},
@@ -71,48 +70,16 @@ async function seedDomainData(tenantId: string, adminId: number): Promise<void> 
       tenantId,
       slackConnected: true,
       slackChannel: '#launches',
-      veoApiKey: 'demo-veo-key-12345',
     },
   });
 
-  // Video jobs — a realistic spread of statuses across several creators.
-  const videoJobsSeed = [
-    { creator: sarah, title: 'Spring launch teaser', prompt: 'A pastel product bottle rotating slowly on a marble podium, soft studio light, 8s loop.', mode: 'text', status: 'completed', videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
-    { creator: marcus, title: 'Onboarding walkthrough clip', prompt: 'A friendly animated arrow guiding a cursor through a dashboard, clean UI, upbeat pace.', mode: 'text', status: 'completed', videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
-    { creator: priya, title: 'Weekend sale vertical ad', prompt: 'Bright bold sale graphics animating in over a gradient background, vertical 9:16 format.', mode: 'text', status: 'rendering', videoUrl: null },
-    { creator: diego, title: 'Team photo motion', prompt: 'Gentle parallax zoom over a team photo, warm color grade, subtle particle overlay.', mode: 'image', status: 'completed', videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
-    { creator: lena, title: 'New feature announcement', prompt: 'A sleek dark UI mockup animating open with a glowing highlight on the new button.', mode: 'text', status: 'failed', videoUrl: null },
-    { creator: sarah, title: 'Customer testimonial intro', prompt: 'A calm portrait slowly coming into focus with a soft light flare, cinematic.', mode: 'image', status: 'queued', videoUrl: null },
-    { creator: marcus, title: 'Conference recap sizzle', prompt: 'Fast cuts of a stage, crowd, and confetti with bold sans-serif title cards.', mode: 'text', status: 'completed', videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
-  ];
-  for (const v of videoJobsSeed) {
-    const existing = await prisma.videoJob.findFirst({ where: { tenantId, title: v.title, creatorId: v.creator.id } });
-    if (!existing) {
-      await prisma.videoJob.create({
-        data: {
-          tenantId,
-          creatorId: v.creator.id,
-          creatorDisplayName: v.creator.displayName ?? v.creator.email.split('@')[0],
-          title: v.title,
-          prompt: v.prompt,
-          mode: v.mode,
-          status: v.status,
-          videoUrl: v.videoUrl,
-          errorMessage: v.status === 'failed' ? 'Generation failed. Please try again.' : null,
-          sourceImageUrl: v.mode === 'image' ? '/uploads/label-logo-277e1cf0.png' : null,
-        },
-      });
-    }
-  }
-
-  // Workspace feed — a short realistic conversation plus one bot alert.
+  // Workspace feed — a short realistic conversation.
   const messagesSeed = [
-    { author: sarah, body: 'Just kicked off the spring launch render — should be ready in a few minutes.', isBot: false },
+    { author: sarah, body: 'Just kicked off the spring launch assets — should be ready in a few minutes.', isBot: false },
     { author: marcus, body: 'Nice, can you post it to #launches when it is done?', isBot: false },
-    { author: null, body: '🎬 Sarah Chen\'s video "Spring launch teaser" just finished rendering — posted to #launches.', isBot: true },
-    { author: priya, body: 'Working on the weekend sale vertical ad now, will share a draft shortly.', isBot: false },
-    { author: diego, body: 'The team photo motion clip turned out great, adding it to the deck.', isBot: false },
-    { author: lena, body: 'Feature announcement render failed on my end — retrying now.', isBot: false },
+    { author: priya, body: 'Working on the weekend sale graphics now, will share a draft shortly.', isBot: false },
+    { author: diego, body: 'The team photo update turned out great, adding it to the deck.', isBot: false },
+    { author: lena, body: 'Feature announcement draft is ready for review.', isBot: false },
   ];
   for (const m of messagesSeed) {
     const authorId = m.author ? m.author.id : 0;

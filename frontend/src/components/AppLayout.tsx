@@ -60,9 +60,6 @@ export const AppLayout = (): FunctionComponent => {
 							<a data-edit-id="nav:a:3" href="/#how" className={navLinkClass}>
 								How it works
 							</a>
-							<a data-edit-id="nav:a:4" href="/#text2video" className={navLinkClass}>
-								Features
-							</a>
 							<a data-edit-id="nav:a:5" href="/#pricing" className={navLinkClass}>
 								Pricing
 							</a>
@@ -78,12 +75,6 @@ export const AppLayout = (): FunctionComponent => {
 							{/* ── APP NAV LINKS (SIGNED-IN) GO HERE ── */}
 							<NavLink to="/dashboard" className={navLinkClassActive}>
 								Dashboard
-							</NavLink>
-							<NavLink to="/studio" className={navLinkClassActive}>
-								Studio
-							</NavLink>
-							<NavLink to="/videos" className={navLinkClassActive}>
-								My Videos
 							</NavLink>
 							<NavLink to="/workspace" className={navLinkClassActive}>
 								Workspace
@@ -143,9 +134,6 @@ export const AppLayout = (): FunctionComponent => {
 									<a href="/#how" className={navLinkClass} onClick={() => setMobileOpen(false)}>
 										How it works
 									</a>
-									<a href="/#text2video" className={navLinkClass} onClick={() => setMobileOpen(false)}>
-										Features
-									</a>
 									<a href="/#pricing" className={navLinkClass} onClick={() => setMobileOpen(false)}>
 										Pricing
 									</a>
@@ -169,12 +157,6 @@ export const AppLayout = (): FunctionComponent => {
 								<>
 									<NavLink to="/dashboard" className={navLinkClass} onClick={() => setMobileOpen(false)}>
 										Dashboard
-									</NavLink>
-									<NavLink to="/studio" className={navLinkClass} onClick={() => setMobileOpen(false)}>
-										Studio
-									</NavLink>
-									<NavLink to="/videos" className={navLinkClass} onClick={() => setMobileOpen(false)}>
-										My Videos
 									</NavLink>
 									<NavLink to="/workspace" className={navLinkClass} onClick={() => setMobileOpen(false)}>
 										Workspace
@@ -217,9 +199,6 @@ export const AppLayout = (): FunctionComponent => {
 					<nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
 						<a data-edit-id="footer:a:3" href="/#how" className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground">
 							How it works
-						</a>
-						<a data-edit-id="footer:a:4" href="/#text2video" className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground">
-							Features
 						</a>
 						<a data-edit-id="footer:a:5" href="/#pricing" className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground">
 							Pricing

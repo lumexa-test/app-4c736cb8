@@ -1,23 +1,3 @@
-export type VideoJobStatus = 'queued' | 'rendering' | 'completed' | 'failed';
-export type VideoJobMode = 'text' | 'image';
-
-export interface VideoJob {
-  id: number;
-  tenantId: string;
-  creatorId: number;
-  creatorDisplayName: string;
-  title: string;
-  prompt: string;
-  mode: VideoJobMode;
-  sourceImageUrl: string | null;
-  status: VideoJobStatus;
-  videoUrl: string | null;
-  veoJobId: string | null;
-  errorMessage: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface WorkspaceMessage {
   id: number;
   tenantId: string;
@@ -45,6 +25,3 @@ export interface WorkspaceMember {
   isAdmin: boolean;
 }
 
-export interface TenantSettingsView {
-  veoApiKeyConfigured: boolean;
-}
